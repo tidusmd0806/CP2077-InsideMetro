@@ -8,8 +8,9 @@ function Debug:New(core_obj)
 
     -- set parameters
     obj.is_im_gui_rw_count = false
-    obj.is_im_gui_situation = false
+    obj.is_im_gui_check_anim = false
     obj.is_set_observer = false
+    self.input_text_1 = ""
     return setmetatable(obj, self)
 end
 
@@ -22,7 +23,7 @@ function Debug:ImGuiMain()
     self:SetLogLevel()
     self:SelectPrintDebug()
     self:ImGuiShowRWCount()
-    -- self:ImGuiSituation()
+    self:ImGuiCheckAnim()
     self:ImGuiExcuteFunction()
 
     ImGui.End()
@@ -33,6 +34,40 @@ function Debug:SetObserver()
 
     if not self.is_set_observer then
         -- reserved
+        Observe('gameWorkspotGameSystem', 'PlayInDevice', function(this)
+            print('playindevice')
+        end)
+        Observe('gameWorkspotGameSystem', 'StopInDevice', function(this)
+            print('stopindevice')
+        end)
+        Observe('gameWorkspotGameSystem', 'SendReactionSignal', function(this)
+            print('SendReactionSignal')
+        end)
+        Observe('gameWorkspotGameSystem', 'IsReactionAvailable', function(this)
+            print('IsReactionAvailable')
+        end)
+        -- Observe('gameWorkspotGameSystem', 'MountToVehicle', function(this, parent, child, slidetime, animDelay, workspotresourceContaior, slotname, syncronizedObjects, entrysolt, anuvari)
+        --     print(slidetime)
+        --     print(animDelay)
+        --     print(workspotresourceContaior.value)
+        --     print(slotname.value)
+        --     print(entrysolt.value)
+        --     print(anuvari[1].value)
+        -- end)
+        Observe('gameWorkspotGameSystem', 'UnmountFromVehicle', function(this, parent, child, instance, pos, ori, exit)
+            print(exit.value)
+        end)
+        Observe('WorkspotEvents', 'SetWorkspotAnimFeature', function(this)
+            print('SetWorkspotAnimFeature')
+        end)
+        Override('gameWorkspotGameSystem', 'MountToVehicle', function(this, event, wrappred_method)
+            print('MountToVehicle')
+        end)
+        Override('LocomotionTransition', 'IsTouchingGround', function(this, script_interface, wrapped_method)
+            local res = wrapped_method(script_interface)
+            -- print(res)
+            return res
+        end)
     end
     self.is_set_observer = true
 
@@ -71,10 +106,33 @@ function Debug:ImGuiShowRWCount()
     end
 end
 
-function Debug:ImGuiSituation()
-    self.is_im_gui_situation = ImGui.Checkbox("[ImGui] Current Situation", self.is_im_gui_situation)
-    if self.is_im_gui_situation then
-        ImGui.Text("Current Situation : " .. self.core_obj.event_obj.current_situation)
+function Debug:ImGuiCheckAnim()
+    self.is_im_gui_check_anim = ImGui.Checkbox("[ImGui] check anim", self.is_im_gui_check_anim)
+    if self.is_im_gui_check_anim then
+        self.input_text_1 =  ImGui.InputText("##AnimName", self.input_text_1, 100)
+        if ImGui.Button("PlayAnim") then
+            local anim_name = CName.new(self.input_text_1)
+            local player = Game.GetPlayer()
+            local transform = player:GetWorldTransform()
+            transform:SetPosition(player:GetWorldPosition())
+            local angles = player:GetWorldOrientation():ToEulerAngles()
+            transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
+        
+            local dummy_entity_id = exEntitySpawner.Spawn("base\\itm\\metro_workspot.ent", transform, '')
+        
+            Cron.Every(0.01, {tick = 1}, function(timer)
+                local dummy_entity = Game.FindEntityByID(dummy_entity_id)
+                if dummy_entity ~= nil then
+                    Game.GetWorkspotSystem():StopInDevice(Game.GetPlayer())
+                    Cron.After(0.1, function()
+                        Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true, "metro_workspot", nil, nil, 0, 1, nil)
+                        Game.GetWorkspotSystem():SendJumpToAnimEnt(player, anim_name, true)
+                    end)
+                    Cron.Halt(timer)
+                end
+            end)
+            print("Excute Test Function 1")
+        end
     end
 end
 
@@ -167,8 +225,7 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF8") then
-        local name = CName.new("ue_metro_next_station")
-        Game.GetQuestsSystem():SetFact(name, 1)
+        Game.GetWorkspotSystem():StopInDevice(Game.GetPlayer(), Vector4.new(0, 0, 100, 1), Quaternion.new(0, 0, 0, 1))
         print("Excute Test Function 8")
     end
     ImGui.SameLine()
@@ -190,24 +247,108 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF10") then
-        local spawnTransform = WorldTransform.new()
-        local entityID = exEntitySpawner.Spawn("base\\entities\\cameras\\photo_mode_camera.ent", spawnTransform, '')
-        Cron.Every(0.1, {tick = 1}, function(timer)
-            local entity = Game.FindEntityByID(entityID)
-            timer.tick = timer.tick + 1
-            if entity then
-                self.handle = entity
-                self.hash = tostring(entity:GetEntityID().hash)
-                print("Spawned camera entity: " .. self.hash)
-                self.component = entity:FindComponentByName("FreeCamera2447")
+        local player = Game.GetPlayer()
+        local dummy_entity = GetMountedVehicle(player)
+        local workspot_resorce_component_name = "trunkBodyDisposalPlayer"
+        local pose_name = "sit_metro_lean180__lh_window__01"
+        -- Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true, workspot_resorce_component_name, nil, nil, 0, 1, nil)
+        -- Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true)
+        -- Game.GetWorkspotSystem():SendJumpToAnimEnt(player, pose_name, false)
+        Game.GetWorkspotSystem():SendPlaySignal(player)
+        print(Game.GetWorkspotSystem():IsActorInWorkspot(player))
+        print(Game.GetWorkspotSystem():IsInVehicleWorkspot(dummy_entity, player, "Passengers"))
+        print(Game.GetWorkspotSystem():IsWorkspotEnabled(player))
 
-                Cron.Halt(timer)
-            elseif timer.tick > 20 then
-                print("Failed to spawn camera")
+		local seID_1 = TweakDBID.new("GameplayRestriction.NoJump")
+        local seID_2 = TweakDBID.new("GameplayRestriction.NoSprint")
+		StatusEffectHelper.ApplyStatusEffect(player, seID_1)
+        StatusEffectHelper.ApplyStatusEffect(player, seID_2)
+
+        print("Excute Test Function 10")
+    end
+    ImGui.SameLine()
+    if ImGui.Button("TF11") then
+        local player = Game.GetPlayer()
+        local metro = GetMountedVehicle(player)
+        local workspot_name = CName.new("OccupantSlots")
+        local slot_name= CName.new("Passengers2")
+        Game.GetWorkspotSystem():MountToVehicle(metro ,player, 0, 0, workspot_name, slot_name)
+        print("Excute Test Function 11")
+    end
+    ImGui.SameLine()
+    if ImGui.Button("TF12") then
+        local player = Game.GetPlayer()
+        local metro = GetMountedVehicle(player)
+        local workspot_name = CName.new("OccupantSlots")
+        local slot_name= CName.new("Passengers")
+        Game.GetWorkspotSystem():SwitchSeatVehicle(metro ,player, workspot_name, slot_name)
+        print("Excute Test Function 12")
+    end
+    ImGui.SameLine()
+    if ImGui.Button("TF13") then
+        local player = Game.GetPlayer()
+        local transform = player:GetWorldTransform()
+        transform:SetPosition(player:GetWorldPosition())
+        local angles = player:GetWorldOrientation():ToEulerAngles()
+        transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
+    
+        self.dummy_entity_id = exEntitySpawner.Spawn("base\\dav\\dummy_seat.ent", transform, '')
+    
+        Cron.Every(0.01, {tick = 1}, function(timer)
+            local dummy_entity = Game.FindEntityByID(self.dummy_entity_id)
+            if dummy_entity ~= nil then
+                Game.GetWorkspotSystem():StopInDevice(Game.GetPlayer())
+                Cron.After(0.1, function()
+                    Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true, "av_seat_workspot", nil, nil, 0, 1, nil)
+                    Game.GetWorkspotSystem():SendJumpToAnimEnt(player, "sit_chair_lean180__2h_on_lap__01", true)
+                end)
+                Cron.Every(0.01, {tick = 1}, function(timer)
+                    timer.tick = timer.tick + 1
+                    local dummy_entity = Game.FindEntityByID(self.dummy_entity_id)
+                    local pos = GetMountedVehicle(player):GetWorldPosition()
+                    local angle = GetMountedVehicle(player):GetWorldOrientation():ToEulerAngles()
+                    Game.GetTeleportationFacility():Teleport(dummy_entity, pos, angle)
+                    if timer.tick > 2000 then
+                        Cron.Halt(timer)
+                    end
+                end)
                 Cron.Halt(timer)
             end
         end)
-        print("Excute Test Function 10")
+        print("Excute Test Function 13")
+    end
+    ImGui.SameLine()
+    if ImGui.Button("TF14") then
+        local player = Game.GetPlayer()
+        local transform = player:GetWorldTransform()
+        transform:SetPosition(player:GetWorldPosition())
+        local angles = player:GetWorldOrientation():ToEulerAngles()
+        transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
+    
+        self.dummy_entity_id = exEntitySpawner.Spawn("base\\itm\\metro_workspot.ent", transform, '')
+    
+        Cron.Every(0.01, {tick = 1}, function(timer)
+            local dummy_entity = Game.FindEntityByID(self.dummy_entity_id)
+            if dummy_entity ~= nil then
+                Game.GetWorkspotSystem():StopInDevice(Game.GetPlayer())
+                Cron.After(0.1, function()
+                    Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true, "metro_workspot", nil, nil, 0, 1, nil)
+                    Game.GetWorkspotSystem():SendJumpToAnimEnt(player, "sit_chair_lean180__2h_on_lap__01", true)
+                end)
+                Cron.Every(0.01, {tick = 1}, function(timer)
+                    timer.tick = timer.tick + 1
+                    local dummy_entity = Game.FindEntityByID(self.dummy_entity_id)
+                    local pos = GetMountedVehicle(player):GetWorldPosition()
+                    local angle = GetMountedVehicle(player):GetWorldOrientation():ToEulerAngles()
+                    Game.GetTeleportationFacility():Teleport(dummy_entity, pos, angle)
+                    if timer.tick > 2000 then
+                        Cron.Halt(timer)
+                    end
+                end)
+                Cron.Halt(timer)
+            end
+        end)
+        print("Excute Test Function 14")
     end
 end
 

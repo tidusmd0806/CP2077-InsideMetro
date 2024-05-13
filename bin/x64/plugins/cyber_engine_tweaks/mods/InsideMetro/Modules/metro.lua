@@ -1,63 +1,89 @@
 local Metro = {}
 Metro.__index = Metro
 
-function Metro:New(player_obj)
+function Metro:New()
     -- instance --
     local obj = {}
-    obj.player_obj = player_obj
     -- static --
-    obj.distance_front = 1
+    obj.workspot_entity_path = "base\\itm\\metro_workspot.ent"
+    obj.workspot_name = "metro_workspot"
+    obj.wait_time_after_standup = 2.0
+    obj.despawn_count_after_standup = 250
+    obj.sit_down_anim = "player__sit_chair_lean180__2h_on_lap__01__to__stand__2h_on_sides__01__turn0__01"
     -- dynamic --
     obj.entity_metro = nil
-    obj.entity_vehicle = nil
-    obj.entity_vehicle_id = nil
+    obj.entity_metro_id = nil
+    obj.workspot_entity = nil
+    obj.workspot_entity_id = nil
     return setmetatable(obj, self)
 end
 
-function Metro:GetPosition()
-    return self.entity_metro:GetWorldPosition()
-end
-
 function Metro:ActiveFreeWalking()
-    self.player_obj:Update()
     self:Unmount()
 end
 
 function Metro:DeactiveFreeWalking()
-    self.player_obj:Update()
     self:Mount()
 end
 
+function Metro:SetMetroEntity()
+    self.entity_metro = GetMountedVehicle(Game.GetPlayer())
+    if self.entity_metro == nil then
+        return false
+    else
+        return true
+    end
+end
+
+function Metro:StandUp()
+
+    self:SetMetroEntity()
+    local player = Game.GetPlayer()
+    local transform = player:GetWorldTransform()
+    transform:SetPosition(player:GetWorldPosition())
+    local angles = player:GetWorldOrientation():ToEulerAngles()
+    transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
+
+    self.workspot_entity_id = exEntitySpawner.Spawn(self.workspot_entity_path, transform, '')
+
+    Cron.Every(0.01, {tick = 1}, function(timer)
+        self.workspot_entity = Game.FindEntityByID(self.workspot_entity_id)
+        if self.workspot_entity ~= nil then
+            Game.GetWorkspotSystem():StopInDevice(player)
+            Cron.After(0.1, function()
+                Game.GetWorkspotSystem():PlayInDeviceSimple(self.workspot_entity, player, true, self.workspot_name, nil, nil, 0, 1, nil)
+                Game.GetWorkspotSystem():SendJumpToAnimEnt(player, "sit_chair_lean180__2h_on_lap__01", true)
+            end)
+            Cron.Every(0.01, {tick = 1}, function(timer)
+                timer.tick = timer.tick + 1
+                local pos = self.entity_metro:GetWorldPosition()
+                local angle = self.entity_metro:GetWorldOrientation():ToEulerAngles()
+                Game.GetTeleportationFacility():Teleport(self.workspot_entity, pos, angle)
+                if timer.tick > self.despawn_count_after_standup then
+                    exEntitySpawner.Despawn(self.workspot_entity)
+                    Cron.Halt(timer)
+                end
+            end)
+            Cron.Halt(timer)
+        end
+    end)
+end
+
 function Metro:Unmount()
-    local player = self.player_obj:GetPuppet()
-    self.entity_metro = GetMountedVehicle(player)
-    local player_pos = self.player_obj:GetPosition()
-    local player_forward = self.player_obj:GetForward()
-    local player_new_pos = Vector4.new(player_pos.x + player_forward.x * self.distance_front, player_pos.y + player_forward.y * self.distance_front, player_pos.z + player_forward.z * self.distance_front, player_pos.w)
-    Game.GetWorkspotSystem():UnmountFromVehicle(self.entity, player, false, Vector4.new(0, 0, 0, 1), Quaternion.new(0, 0, 0, 1), "Passengers")
 
-    local angle = player:GetWorldOrientation():ToEulerAngles()
-    local metro_pos = self:GetPosition()
-    local pos = Vector4.new(metro_pos.x, metro_pos.y, metro_pos.z + 1, metro_pos.w)
-    Game.GetTeleportationFacility():Teleport(player, self:GetPosition(), angle)
-    -- Cron.Every(0.01, {tick = 1}, function(timer)
-    --     timer.tick = timer.tick + 1
-    --     Game.GetTeleportationFacility():Teleport(player, self:GetPosition(), angle)
-    --     if timer.tick >= 500 then
-    --         timer:Halt(timer)
-    --     end
-    -- end)
+    self:StandUp()
 
-    Cron.After(1 , function()
+    Cron.After(self.wait_time_after_standup , function()
 
-        self.entity_vehicle = GetMountedVehicle(player)
-        self.entity_vehicle_id = self.entity_vehicle:GetEntityID()
+        local player = Game.GetPlayer()
+        self.entity_metro = GetMountedVehicle(player)
+        self.entity_metro_id = self.entity_metro:GetEntityID()
         local seat = "Passengers"
 
         local data = NewObject('handle:gameMountEventData')
         data.isInstant = true
         data.slotName = seat
-        data.mountParentEntityId = self.entity_vehicle_id
+        data.mountParentEntityId = self.entity_metro_id
         data.entryAnimName = "forcedTransition"
 
         local slotID = NewObject('gamemountingMountingSlotId')
@@ -65,7 +91,7 @@ function Metro:Unmount()
 
         local mounting_info = NewObject('gamemountingMountingInfo')
         mounting_info.childId = player:GetEntityID()
-        mounting_info.parentId = self.entity_vehicle_id
+        mounting_info.parentId = self.entity_metro_id
         mounting_info.slotId = slotID
 
         local mount_event = NewObject('handle:gamemountingUnmountingRequest')
@@ -73,15 +99,13 @@ function Metro:Unmount()
         mount_event.mountData = data
 
         Game.GetMountingFacility():Unmount(mount_event)
-        Cron.After(1 , function()
-            self:StickPlayerToFloor()
-        end)
     end)
 
 end
 
 function Metro:Mount()
-    local player = self.player_obj:GetPuppet()
+
+    local player = Game.GetPlayer()
     local ent_id = self.entity_metro:GetEntityID()
     local seat = "Passengers"
     local data = NewObject('handle:gameMountEventData')
@@ -102,20 +126,9 @@ function Metro:Mount()
     mounting_request.mountData = data
 
     Game.GetMountingFacility():Mount(mounting_request)
-end
 
-function Metro:StickPlayerToFloor()
-    Cron.Every(0.1, {tick = 1}, function(timer)
-        self.player_obj:Update()
-        local player = self.player_obj:GetPuppet()
-        local player_pos = self.player_obj:GetPosition()
-        local raycast_end_pos = Vector4.new(player_pos.x, player_pos.y, player_pos.z - 10, player_pos.w)
-        local res, trace_result = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, raycast_end_pos, "Static", false, false)
-        if trace_result ~= nil then
-            local pos = Vector4.new(trace_result.position.x, trace_result.position.y, trace_result.position.z, player_pos.w)
-            Game.GetTeleportationFacility():Teleport(player, pos, self.player_obj:GetAngle())
-        end
-    end)
+    self:StandUp()
+
 end
 
 return Metro
