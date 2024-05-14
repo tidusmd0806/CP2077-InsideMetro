@@ -4,109 +4,105 @@ Metro.__index = Metro
 function Metro:New()
     -- instance --
     local obj = {}
-    -- static --
-    obj.workspot_entity_path = "base\\itm\\metro_workspot.ent"
-    obj.workspot_name = "metro_workspot"
-    obj.wait_time_after_standup = 2.0
-    obj.despawn_count_after_standup = 250
-    obj.sit_down_anim = "player__sit_chair_lean180__2h_on_lap__01__to__stand__2h_on_sides__01__turn0__01"
+    obj.log_obj = Log:New()
+    obj.log_obj:SetLevel(LogLevel.Info, "Metro")
     -- dynamic --
-    obj.entity_metro = nil
-    obj.entity_metro_id = nil
-    obj.workspot_entity = nil
-    obj.workspot_entity_id = nil
+    obj.entity = nil
+    obj.entity_id = nil
+    obj.is_mounted_player = true
+    obj.player_seat_position = nil
     return setmetatable(obj, self)
 end
 
-function Metro:ActiveFreeWalking()
-    self:Unmount()
-end
-
-function Metro:DeactiveFreeWalking()
-    self:Mount()
+function Metro:Init()
+    self:SetMetroEntity()
+    self:SetPlayerSeatPosition()
 end
 
 function Metro:SetMetroEntity()
-    self.entity_metro = GetMountedVehicle(Game.GetPlayer())
-    if self.entity_metro == nil then
+    self.entity = GetMountedVehicle(Game.GetPlayer())
+    if self.entity == nil then
         return false
     else
         return true
     end
 end
 
-function Metro:StandUp()
+function Metro:IsMountedPlayer()
+    return self.is_mounted_player
+end
 
-    self:SetMetroEntity()
-    local player = Game.GetPlayer()
-    local transform = player:GetWorldTransform()
-    transform:SetPosition(player:GetWorldPosition())
-    local angles = player:GetWorldOrientation():ToEulerAngles()
-    transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
+function Metro:GetWorldPosition()
+    return self.entity:GetWorldPosition()
+end
 
-    self.workspot_entity_id = exEntitySpawner.Spawn(self.workspot_entity_path, transform, '')
+function Metro:GetWorldOrientation()
+    return self.entity:GetWorldOrientation()
+end
 
-    Cron.Every(0.01, {tick = 1}, function(timer)
-        self.workspot_entity = Game.FindEntityByID(self.workspot_entity_id)
-        if self.workspot_entity ~= nil then
-            Game.GetWorkspotSystem():StopInDevice(player)
-            Cron.After(0.1, function()
-                Game.GetWorkspotSystem():PlayInDeviceSimple(self.workspot_entity, player, true, self.workspot_name, nil, nil, 0, 1, nil)
-                Game.GetWorkspotSystem():SendJumpToAnimEnt(player, "sit_chair_lean180__2h_on_lap__01", true)
-            end)
-            Cron.Every(0.01, {tick = 1}, function(timer)
-                timer.tick = timer.tick + 1
-                local pos = self.entity_metro:GetWorldPosition()
-                local angle = self.entity_metro:GetWorldOrientation():ToEulerAngles()
-                Game.GetTeleportationFacility():Teleport(self.workspot_entity, pos, angle)
-                if timer.tick > self.despawn_count_after_standup then
-                    exEntitySpawner.Despawn(self.workspot_entity)
-                    Cron.Halt(timer)
-                end
-            end)
-            Cron.Halt(timer)
-        end
-    end)
+function Metro:GetWorldRight()
+    return self.entity:GetWorldRight()
+end
+
+function Metro:GetWorldForward()
+    return self.entity:GetWorldForward()
+end
+
+function Metro:GetWorldUp()
+    return self.entity:GetWorldUp()
+end
+
+function Metro:GetLocalPosition(pos)
+    local origin = self:GetWorldPosition()
+    local right = self:GetWorldRight()
+    local forward = self:GetWorldForward()
+    local up = self:GetWorldUp()
+    local relative = Vector4.new(pos.x - origin.x, pos.y - origin.y, pos.z - origin.z, 1)
+    local x = Vector4.Dot(relative, right)
+    local y = Vector4.Dot(relative, forward)
+    local z = Vector4.Dot(relative, up)
+    return Vector4.new(x, y, z, 1)
+end
+
+function Metro:SetPlayerSeatPosition()
+    self.player_seat_position = self:GetLocalPosition(Game.GetPlayer():GetWorldPosition())
 end
 
 function Metro:Unmount()
 
-    self:StandUp()
+    local player = Game.GetPlayer()
+    self.entity = GetMountedVehicle(player)
+    self.entity_id = self.entity:GetEntityID()
+    local seat = "Passengers"
 
-    Cron.After(self.wait_time_after_standup , function()
+    local data = NewObject('handle:gameMountEventData')
+    data.isInstant = true
+    data.slotName = seat
+    data.mountParentEntityId = self.entity_id
+    data.entryAnimName = "forcedTransition"
 
-        local player = Game.GetPlayer()
-        self.entity_metro = GetMountedVehicle(player)
-        self.entity_metro_id = self.entity_metro:GetEntityID()
-        local seat = "Passengers"
+    local slotID = NewObject('gamemountingMountingSlotId')
+    slotID.id = seat
 
-        local data = NewObject('handle:gameMountEventData')
-        data.isInstant = true
-        data.slotName = seat
-        data.mountParentEntityId = self.entity_metro_id
-        data.entryAnimName = "forcedTransition"
+    local mounting_info = NewObject('gamemountingMountingInfo')
+    mounting_info.childId = player:GetEntityID()
+    mounting_info.parentId = self.entity_id
+    mounting_info.slotId = slotID
 
-        local slotID = NewObject('gamemountingMountingSlotId')
-        slotID.id = seat
+    local mount_event = NewObject('handle:gamemountingUnmountingRequest')
+    mount_event.lowLevelMountingInfo = mounting_info
+    mount_event.mountData = data
 
-        local mounting_info = NewObject('gamemountingMountingInfo')
-        mounting_info.childId = player:GetEntityID()
-        mounting_info.parentId = self.entity_metro_id
-        mounting_info.slotId = slotID
+    Game.GetMountingFacility():Unmount(mount_event)
 
-        local mount_event = NewObject('handle:gamemountingUnmountingRequest')
-        mount_event.lowLevelMountingInfo = mounting_info
-        mount_event.mountData = data
-
-        Game.GetMountingFacility():Unmount(mount_event)
-    end)
+    self.is_mounted_player = false
 
 end
 
 function Metro:Mount()
 
     local player = Game.GetPlayer()
-    local ent_id = self.entity_metro:GetEntityID()
+    local ent_id = self.entity_id
     local seat = "Passengers"
     local data = NewObject('handle:gameMountEventData')
     data.isInstant = false
@@ -127,7 +123,7 @@ function Metro:Mount()
 
     Game.GetMountingFacility():Mount(mounting_request)
 
-    self:StandUp()
+    self.is_mounted_player = true
 
 end
 

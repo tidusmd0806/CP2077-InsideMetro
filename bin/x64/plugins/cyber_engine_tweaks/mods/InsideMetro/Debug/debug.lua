@@ -10,6 +10,7 @@ function Debug:New(core_obj)
     obj.is_im_gui_rw_count = false
     obj.is_im_gui_check_anim = false
     obj.is_set_observer = false
+    obj.is_im_gui_measurement = false
     self.input_text_1 = ""
     return setmetatable(obj, self)
 end
@@ -24,6 +25,7 @@ function Debug:ImGuiMain()
     self:SelectPrintDebug()
     self:ImGuiShowRWCount()
     self:ImGuiCheckAnim()
+    self:ImGuiMeasurement()
     self:ImGuiExcuteFunction()
 
     ImGui.End()
@@ -34,18 +36,18 @@ function Debug:SetObserver()
 
     if not self.is_set_observer then
         -- reserved
-        Observe('gameWorkspotGameSystem', 'PlayInDevice', function(this)
-            print('playindevice')
-        end)
-        Observe('gameWorkspotGameSystem', 'StopInDevice', function(this)
-            print('stopindevice')
-        end)
-        Observe('gameWorkspotGameSystem', 'SendReactionSignal', function(this)
-            print('SendReactionSignal')
-        end)
-        Observe('gameWorkspotGameSystem', 'IsReactionAvailable', function(this)
-            print('IsReactionAvailable')
-        end)
+        -- Observe('gameWorkspotGameSystem', 'PlayInDevice', function(this)
+        --     print('playindevice')
+        -- end)
+        -- Observe('gameWorkspotGameSystem', 'StopInDevice', function(this)
+        --     print('stopindevice')
+        -- end)
+        -- Observe('gameWorkspotGameSystem', 'SendReactionSignal', function(this)
+        --     print('SendReactionSignal')
+        -- end)
+        -- Observe('gameWorkspotGameSystem', 'IsReactionAvailable', function(this)
+        --     print('IsReactionAvailable')
+        -- end)
         -- Observe('gameWorkspotGameSystem', 'MountToVehicle', function(this, parent, child, slidetime, animDelay, workspotresourceContaior, slotname, syncronizedObjects, entrysolt, anuvari)
         --     print(slidetime)
         --     print(animDelay)
@@ -54,20 +56,20 @@ function Debug:SetObserver()
         --     print(entrysolt.value)
         --     print(anuvari[1].value)
         -- end)
-        Observe('gameWorkspotGameSystem', 'UnmountFromVehicle', function(this, parent, child, instance, pos, ori, exit)
-            print(exit.value)
-        end)
-        Observe('WorkspotEvents', 'SetWorkspotAnimFeature', function(this)
-            print('SetWorkspotAnimFeature')
-        end)
-        Override('gameWorkspotGameSystem', 'MountToVehicle', function(this, event, wrappred_method)
-            print('MountToVehicle')
-        end)
-        Override('LocomotionTransition', 'IsTouchingGround', function(this, script_interface, wrapped_method)
-            local res = wrapped_method(script_interface)
-            -- print(res)
-            return res
-        end)
+        -- Observe('gameWorkspotGameSystem', 'UnmountFromVehicle', function(this, parent, child, instance, pos, ori, exit)
+        --     print(exit.value)
+        -- end)
+        -- Observe('WorkspotEvents', 'SetWorkspotAnimFeature', function(this)
+        --     print('SetWorkspotAnimFeature')
+        -- end)
+        -- Override('gameWorkspotGameSystem', 'MountToVehicle', function(this, event, wrappred_method)
+        --     print('MountToVehicle')
+        -- end)
+        -- Override('LocomotionTransition', 'IsTouchingGround', function(this, script_interface, wrapped_method)
+        --     local res = wrapped_method(script_interface)
+        --     -- print(res)
+        --     return res
+        -- end)
     end
     self.is_set_observer = true
 
@@ -136,25 +138,55 @@ function Debug:ImGuiCheckAnim()
     end
 end
 
+function Debug:ImGuiMeasurement()
+    self.is_im_gui_measurement = ImGui.Checkbox("[ImGui] Measurement", self.is_im_gui_measurement)
+    if self.is_im_gui_measurement then
+        local res_x, res_y = GetDisplayResolution()
+        ImGui.SetNextWindowPos((res_x / 2) - 20, (res_y / 2) - 20)
+        ImGui.SetNextWindowSize(40, 40)
+        ImGui.SetNextWindowSizeConstraints(40, 40, 40, 40)
+        ---
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 10)
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 5)
+        ---
+        ImGui.Begin("Crosshair", ImGuiWindowFlags.NoMove + ImGuiWindowFlags.NoCollapse + ImGuiWindowFlags.NoTitleBar + ImGuiWindowFlags.NoResize)
+        ImGui.End()
+        ---
+        ImGui.PopStyleVar(2)
+        ImGui.PopStyleColor(1)
+        local look_at_pos = Game.GetTargetingSystem():GetLookAtPosition(Game.GetPlayer())
+        if self.core_obj.metro_obj.entity == nil then
+            return
+        end
+        local origin = self.core_obj.metro_obj.entity:GetWorldPosition()
+        local right = self.core_obj.metro_obj.entity:GetWorldRight()
+        local forward = self.core_obj.metro_obj.entity:GetWorldForward()
+        local up = self.core_obj.metro_obj.entity:GetWorldUp()
+        local relative = Vector4.new(look_at_pos.x - origin.x, look_at_pos.y - origin.y, look_at_pos.z - origin.z, 1)
+        local x = Vector4.Dot(relative, right)
+        local y = Vector4.Dot(relative, forward)
+        local z = Vector4.Dot(relative, up)
+        local absolute_position_x = string.format("%.2f", x)
+        local absolute_position_y = string.format("%.2f", y)
+        local absolute_position_z = string.format("%.2f", z)
+        ImGui.Text("[LookAt]X:" .. absolute_position_x .. ", Y:" .. absolute_position_y .. ", Z:" .. absolute_position_z) 
+    end
+end
+
 function Debug:ImGuiExcuteFunction()
     if ImGui.Button("TF1") then
-        self.core_obj.metro_obj:ActiveFreeWalking()
+        self.core_obj:EnableWalkingMetro()
         print("Excute Test Function 1")
     end
     ImGui.SameLine()
     if ImGui.Button("TF2") then
-        self.core_obj.metro_obj:DeactiveFreeWalking()
+        self.core_obj:DisableWalkingMetro()
         print("Excute Test Function 2")
     end
     ImGui.SameLine()
     if ImGui.Button("TF3") then
-        local player = Game.GetPlayer()
-        local pos = player:GetWorldPosition()
-        print("Player Position : " .. pos.x .. ", " .. pos.y .. ", " .. pos.z)
-        local next_pos = Vector4.new(pos.x + 1, pos.y, pos.z - 50, pos.w)
-        local filter = "Static"
-        local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(pos, next_pos, filter, false, false)
-        print("Trace Result : " .. trace.position.x .. ", " .. trace.position.y .. ", " .. trace.position.z)
+        self.core_obj:Init()
+        print(self.core_obj.metro_obj.player_seat_position.x .. ", " .. self.core_obj.metro_obj.player_seat_position.y .. ", " .. self.core_obj.metro_obj.player_seat_position.z)
         print("Excute Test Function 3")
     end
     ImGui.SameLine()
@@ -225,7 +257,7 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF8") then
-        Game.GetWorkspotSystem():StopInDevice(Game.GetPlayer(), Vector4.new(0, 0, 100, 1), Quaternion.new(0, 0, 0, 1))
+        print(self.core_obj.metro_obj.entity_metro)
         print("Excute Test Function 8")
     end
     ImGui.SameLine()
