@@ -52,20 +52,42 @@ function Metro:GetWorldUp()
     return self.entity:GetWorldUp()
 end
 
-function Metro:GetLocalPosition(pos)
+function Metro:ChangeLocalPosition(world_pos)
+
+    if self.entity == nil then
+        return nil
+    end
     local origin = self:GetWorldPosition()
     local right = self:GetWorldRight()
     local forward = self:GetWorldForward()
     local up = self:GetWorldUp()
-    local relative = Vector4.new(pos.x - origin.x, pos.y - origin.y, pos.z - origin.z, 1)
+    local relative = Vector4.new(world_pos.x - origin.x, world_pos.y - origin.y, world_pos.z - origin.z, 1)
     local x = Vector4.Dot(relative, right)
     local y = Vector4.Dot(relative, forward)
     local z = Vector4.Dot(relative, up)
     return Vector4.new(x, y, z, 1)
+
+end
+
+function Metro:ChangeWorldPosition(local_pos)
+
+    if self.entity == nil then
+        return nil
+    end
+    local origin = self:GetWorldPosition()
+    local right = self:GetWorldRight()
+    local forward = self:GetWorldForward()
+    local up = self:GetWorldUp()
+    local x = Vector4.new(right.x * local_pos.x, right.y * local_pos.x, right.z * local_pos.x, 1)
+    local y = Vector4.new(forward.x * local_pos.y, forward.y * local_pos.y, forward.z * local_pos.y, 1)
+    local z = Vector4.new(up.x * local_pos.z, up.y * local_pos.z, up.z * local_pos.z, 1)
+    local world_pos = Vector4.new(x.x + y.x + z.x, x.y + y.y + z.y, x.z + y.z + z.z, 1)
+    return Vector4.new(origin.x + world_pos.x, origin.y + world_pos.y, origin.z + world_pos.z, 1)
+
 end
 
 function Metro:SetPlayerSeatPosition()
-    self.player_seat_position = self:GetLocalPosition(Game.GetPlayer():GetWorldPosition())
+    self.player_seat_position = self:ChangeLocalPosition(Game.GetPlayer():GetWorldPosition())
 end
 
 function Metro:Unmount()

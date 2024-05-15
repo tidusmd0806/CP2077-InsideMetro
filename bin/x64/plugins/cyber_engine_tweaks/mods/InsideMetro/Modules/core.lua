@@ -47,7 +47,6 @@ function Core:DisableWalkingMetro()
         self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: PlayPose")
         self.player_obj:PlayPose(self.sit_down_anim)
     end)
-    
 
 end
 
@@ -75,6 +74,7 @@ function Core:KeepWorkspotRelativePostion()
             return
         end
     end)
+
 end
 
 return Core

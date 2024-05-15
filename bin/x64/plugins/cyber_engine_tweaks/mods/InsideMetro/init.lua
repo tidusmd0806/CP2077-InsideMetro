@@ -12,10 +12,10 @@ local Debug = require('Debug/debug.lua')
 
 ITM = {
 	description = "Inside The Metro",
-	version = "0.0.1",
+	version = "0.1.0",
     is_debug_mode = true,
     -- version check
-    cet_required_version = 32.1, -- 1.32.1
+    cet_required_version = 32.2, -- 1.32.2
     cet_recommended_version = 32.2, -- 1.32.2
     cet_version_num = 0,
 }
