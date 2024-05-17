@@ -27,16 +27,20 @@ function Player:GetWorkspotEntity()
     return self.workspot_entity
 end
 
-function Player:PlayPose(pose_name)
+function Player:PlayPose(pose_name, workspot_pos, workspot_angle)
 
     local player = Game.GetPlayer()
-    local transform = player:GetWorldTransform()
-    transform:SetPosition(player:GetWorldPosition())
-    local angles = player:GetWorldOrientation():ToEulerAngles()
-    transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
+    -- local transform = player:GetWorldTransform()
+    -- transform:SetPosition(player:GetWorldPosition())
+    -- local angles = player:GetWorldOrientation():ToEulerAngles()
+    -- transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
+
+    local workspot_transform = WorldTransform.new()
+    workspot_transform:SetPosition(workspot_pos)
+    workspot_transform:SetOrientationEuler(workspot_angle)
 
     self.log_obj:Record(LogLevel.Trace, "Spawn workspot")
-    self.workspot_entity_id = exEntitySpawner.Spawn(self.workspot_entity_path, transform, '')
+    self.workspot_entity_id = exEntitySpawner.Spawn(self.workspot_entity_path, workspot_transform, '')
     Cron.Every(0.01, {tick = 1}, function(timer)
         self.workspot_entity = Game.FindEntityByID(self.workspot_entity_id)
         if self.workspot_entity ~= nil then

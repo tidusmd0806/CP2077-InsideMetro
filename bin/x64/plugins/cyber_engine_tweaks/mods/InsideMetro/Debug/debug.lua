@@ -8,8 +8,10 @@ function Debug:New(core_obj)
 
     -- set parameters
     obj.is_im_gui_rw_count = false
+    obj.is_im_gui_check_status = false
     obj.is_im_gui_check_anim = false
     obj.is_im_gui_player_local = false
+    obj.is_im_gui_seat_position = false
     obj.is_set_observer = false
     obj.is_im_gui_measurement = false
     self.input_text_1 = ""
@@ -25,9 +27,11 @@ function Debug:ImGuiMain()
     self:SetLogLevel()
     self:SelectPrintDebug()
     self:ImGuiShowRWCount()
-    self:ImGuiCheckAnim()
+    self:ImGuiCheckStatus()
     self:ImGuiPlayerLocalPosition()
+    self:ImGuiSeatPosition()
     self:ImGuiMeasurement()
+    self:ImGuiCheckAnim()
     self:ImGuiExcuteFunction()
 
     ImGui.End()
@@ -41,37 +45,6 @@ function Debug:SetObserver()
         Observe('DataTerm', 'OpenSubwayGate', function(this)
             print('OpenSubwayGate')
         end)
-        -- Observe('gameWorkspotGameSystem', 'StopInDevice', function(this)
-        --     print('stopindevice')
-        -- end)
-        -- Observe('gameWorkspotGameSystem', 'SendReactionSignal', function(this)
-        --     print('SendReactionSignal')
-        -- end)
-        -- Observe('gameWorkspotGameSystem', 'IsReactionAvailable', function(this)
-        --     print('IsReactionAvailable')
-        -- end)
-        -- Observe('gameWorkspotGameSystem', 'MountToVehicle', function(this, parent, child, slidetime, animDelay, workspotresourceContaior, slotname, syncronizedObjects, entrysolt, anuvari)
-        --     print(slidetime)
-        --     print(animDelay)
-        --     print(workspotresourceContaior.value)
-        --     print(slotname.value)
-        --     print(entrysolt.value)
-        --     print(anuvari[1].value)
-        -- end)
-        -- Observe('gameWorkspotGameSystem', 'UnmountFromVehicle', function(this, parent, child, instance, pos, ori, exit)
-        --     print(exit.value)
-        -- end)
-        -- Observe('WorkspotEvents', 'SetWorkspotAnimFeature', function(this)
-        --     print('SetWorkspotAnimFeature')
-        -- end)
-        -- Override('gameWorkspotGameSystem', 'MountToVehicle', function(this, event, wrappred_method)
-        --     print('MountToVehicle')
-        -- end)
-        -- Override('LocomotionTransition', 'IsTouchingGround', function(this, script_interface, wrapped_method)
-        --     local res = wrapped_method(script_interface)
-        --     -- print(res)
-        --     return res
-        -- end)
     end
     self.is_set_observer = true
 
@@ -140,6 +113,14 @@ function Debug:ImGuiCheckAnim()
     end
 end
 
+function Debug:ImGuiCheckStatus()
+    self.is_im_gui_check_status = ImGui.Checkbox("[ImGui] Check Status", self.is_im_gui_check_status)
+    if self.is_im_gui_check_status then
+        local status = self.core_obj.event_obj.current_status
+        ImGui.Text("Status : " .. status)
+    end
+end
+
 function Debug:ImGuiPlayerLocalPosition()
     self.is_im_gui_player_local = ImGui.Checkbox("[ImGui] Player Local Pos", self.is_im_gui_player_local)
     if self.is_im_gui_player_local then
@@ -156,12 +137,38 @@ function Debug:ImGuiPlayerLocalPosition()
         local absolute_position_y = string.format("%.2f", player_local_pos.y)
         local absolute_position_z = string.format("%.2f", player_local_pos.z)
         ImGui.Text("Player Local Pos : " .. absolute_position_x .. ", " .. absolute_position_y .. ", " .. absolute_position_z)
-        local vector = Vector4.new(player_local_pos.x, player_local_pos.y, player_local_pos.z, 1)
-        local world_pos = self.core_obj.metro_obj:ChangeWorldPosition(vector)
-        local x = string.format("%.2f", world_pos.x)
-        local y = string.format("%.2f", world_pos.y)
-        local z = string.format("%.2f", world_pos.z)
-        ImGui.Text("Player World Pos : " .. x .. ", " .. y .. ", " .. z)
+        local npc_pos = self.core_obj.metro_obj.measurement_npc_position
+        local npc_position_x = string.format("%.2f", npc_pos.x)
+        local npc_position_y = string.format("%.2f", npc_pos.y)
+        local npc_position_z = string.format("%.2f", npc_pos.z)
+        ImGui.Text("NPC Measurement Pos : " .. npc_position_x .. ", " .. npc_position_y .. ", " .. npc_position_z)
+        local pos = self.core_obj.metro_obj:GetPlayerLocalPosition()
+        if pos == nil then
+            return
+        end
+        local player_pos_x = string.format("%.2f", pos.x)
+        local player_pos_y = string.format("%.2f", pos.y)
+        local player_pos_z = string.format("%.2f", pos.z)
+        ImGui.Text("Player Local Pos Correctly : " .. player_pos_x .. ", " .. player_pos_y .. ", " .. player_pos_z)
+    end
+end
+
+function Debug:ImGuiSeatPosition()
+    self.is_im_gui_seat_position = ImGui.Checkbox("[ImGui] Seat Position", self.is_im_gui_seat_position)
+    if self.is_im_gui_seat_position then
+        local pos = self.core_obj.metro_obj.player_seat_position
+        if pos == nil then
+            return
+        end
+        local x = string.format("%.2f", pos.x)
+        local y = string.format("%.2f", pos.y)
+        local z = string.format("%.2f", pos.z)
+        ImGui.Text("Seat Position : " .. x .. ", " .. y .. ", " .. z)
+        if self.core_obj.metro_obj.is_player_seat_right_side then
+            ImGui.Text("Seat Side : Right")
+        else
+            ImGui.Text("Seat Side : Left")
+        end
     end
 end
 
@@ -276,8 +283,26 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF9") then
-        Cron.Every(0.01, {tick = 1}, function(timer)
-            print(self.core_obj.metro_obj.entity:GetCurrentSpeed())
+        -- Cron.Every(0.01, {tick = 1}, function(timer)
+        --     print("entity:" .. self.core_obj.metro_obj.entity:GetCurrentSpeed())
+        -- end)
+        Cron.Every(0.01 , {tick = 1}, function(timer)
+            if self.past_pos_entity == nil then
+                self.past_pos_entity = self.core_obj.metro_obj.entity:GetWorldPosition()
+                return
+            end
+            if self.past_pos == nil then
+                self.past_pos = Game.GetPlayer():GetWorldPosition()
+                return
+            end
+            local current_pos_entity = self.core_obj.metro_obj.entity:GetWorldPosition()
+            local diff_entity = Vector4.new(current_pos_entity.x - self.past_pos_entity.x, current_pos_entity.y - self.past_pos_entity.y, current_pos_entity.z - self.past_pos_entity.z, 1)
+            local current_pos = Game.GetPlayer():GetWorldPosition()
+            local diff = Vector4.new(current_pos.x - self.past_pos.x, current_pos.y - self.past_pos.y, current_pos.z - self.past_pos.z, 1)
+            local diff_vec = Vector4.new(diff.x - diff_entity.x, diff.y - diff_entity.y, diff.z - diff_entity.z, 1)
+            print("x" .. diff_vec.x .. ", y" .. diff_vec.y .. ", z" .. diff_vec.z)
+            self.past_pos = Game.GetPlayer():GetWorldPosition()
+            self.past_pos_entity = self.core_obj.metro_obj.entity:GetWorldPosition()
         end)
         print("Excute Test Function 9")
     end
@@ -305,86 +330,131 @@ function Debug:ImGuiExcuteFunction()
     ImGui.SameLine()
     if ImGui.Button("TF11") then
         local player = Game.GetPlayer()
-        local metro = GetMountedVehicle(player)
-        local workspot_name = CName.new("OccupantSlots")
-        local slot_name= CName.new("Passengers2")
-        Game.GetWorkspotSystem():MountToVehicle(metro ,player, 0, 0, workspot_name, slot_name)
+        local transform = player:GetWorldTransform()
+        transform:SetPosition(player:GetWorldPosition())
+        local angles = player:GetWorldOrientation():ToEulerAngles()
+        transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
+
+        self.workspot_entity_id = exEntitySpawner.Spawn("base\\characters\\entities\\main_npc\\hanako.ent", transform, '')
+
+        Cron.Every(0.01, {tick = 1}, function(timer)
+            local dummy_entity = Game.FindEntityByID(self.workspot_entity_id)
+            if dummy_entity ~= nil then
+                local seat = "seat_back_left"
+                local lowLevelMountingInfo = MountingInfo;
+                local mountingRequest =  MountingRequest.new();
+                local mountData =  MountEventData.new();
+                local mountOptions =  MountEventOptions.new();
+                lowLevelMountingInfo.parentId = self.core_obj.metro_obj.entity:GetEntityID();
+                lowLevelMountingInfo.childId = self.workspot_entity_id
+                local slotID = NewObject('gamemountingMountingSlotId')
+                slotID.id = seat
+                lowLevelMountingInfo.slotId = slotID;
+                mountingRequest.lowLevelMountingInfo = lowLevelMountingInfo;
+                mountingRequest.preservePositionAfterMounting = true;
+                mountingRequest.mountData = mountData;
+                mountOptions.alive = true;
+                mountOptions.occupiedByNonFriendly = false;
+                mountingRequest.mountData.mountEventOptions = mountOptions;
+                Game.GetMountingFacility():Mount(mountingRequest);
+                
+                -- local command = 'AIMountCommand'
+                -- local cmd = NewObject(command)
+                -- local mountData = NewObject('handle:gameMountEventData')
+                -- mountData.slotName = CName.new(seat)
+                -- mountData.ignoreHLS = false
+                -- mountData.mountParentEntityId = self.core_obj.metro_obj.entity:GetEntityID()
+                -- mountData.isInstant = true
+                -- cmd.mountData = mountData
+
+                -- function executeCmd(objlook, cmd)
+                --     if objlook ~= nil or objlook ~= '' then
+                --         AIComponent = objlook:GetAIControllerComponent()
+                        
+                --         if (AIComponent ~= nil) then
+                --             AIComponent:SendCommand(cmd)
+                --         end
+                        
+                --     end
+                -- end
+                
+                -- executeCmd(dummy_entity,cmd)
+                print("Mount")
+                Cron.Halt(timer)
+            end
+        end)
+
         print("Excute Test Function 11")
     end
     ImGui.SameLine()
     if ImGui.Button("TF12") then
-        local player = Game.GetPlayer()
-        local metro = GetMountedVehicle(player)
-        local workspot_name = CName.new("OccupantSlots")
-        local slot_name= CName.new("Passengers")
-        Game.GetWorkspotSystem():SwitchSeatVehicle(metro ,player, workspot_name, slot_name)
+        self.switch = not self.switch
+        if self.switch then
+            Game.GetTimeSystem():SetIgnoreTimeDilationOnLocalPlayerZero(false)
+            Game.GetTimeSystem():UnsetTimeDilation("consoleCommand", "None")
+        else
+            Game.GetTimeSystem():SetIgnoreTimeDilationOnLocalPlayerZero(true)
+            Game.GetTimeSystem():SetTimeDilation("consoleCommand", 0.0000000000001)
+        end
         print("Excute Test Function 12")
     end
     ImGui.SameLine()
     if ImGui.Button("TF13") then
         local player = Game.GetPlayer()
-        local transform = player:GetWorldTransform()
-        transform:SetPosition(player:GetWorldPosition())
-        local angles = player:GetWorldOrientation():ToEulerAngles()
-        transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
-
-        self.dummy_entity_id = exEntitySpawner.Spawn("base\\dav\\dummy_seat.ent", transform, '')
-
-        Cron.Every(0.01, {tick = 1}, function(timer)
-            local dummy_entity = Game.FindEntityByID(self.dummy_entity_id)
-            if dummy_entity ~= nil then
-                Game.GetWorkspotSystem():StopInDevice(Game.GetPlayer())
-                Cron.After(0.1, function()
-                    Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true, "av_seat_workspot", nil, nil, 0, 1, nil)
-                    Game.GetWorkspotSystem():SendJumpToAnimEnt(player, "sit_chair_lean180__2h_on_lap__01", true)
-                end)
-                Cron.Every(0.01, {tick = 1}, function(timer)
-                    timer.tick = timer.tick + 1
-                    local dummy_entity = Game.FindEntityByID(self.dummy_entity_id)
-                    local pos = GetMountedVehicle(player):GetWorldPosition()
-                    local angle = GetMountedVehicle(player):GetWorldOrientation():ToEulerAngles()
-                    Game.GetTeleportationFacility():Teleport(dummy_entity, pos, angle)
-                    if timer.tick > 2000 then
-                        Cron.Halt(timer)
-                    end
-                end)
-                Cron.Halt(timer)
-            end
-        end)
+        local target = Game.GetTargetingSystem():GetLookAtObject(player, true, false) or Game.GetTargetingSystem():GetLookAtObject(player, false, false)
+        print(target:GetWorldPosition().x .. ", " .. target:GetWorldPosition().y .. ", " .. target:GetWorldPosition().z)
         print("Excute Test Function 13")
     end
     ImGui.SameLine()
     if ImGui.Button("TF14") then
-        local player = Game.GetPlayer()
-        local transform = player:GetWorldTransform()
-        transform:SetPosition(player:GetWorldPosition())
-        local angles = player:GetWorldOrientation():ToEulerAngles()
-        transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
-
-        self.dummy_entity_id = exEntitySpawner.Spawn("base\\itm\\metro_workspot.ent", transform, '')
-
         Cron.Every(0.01, {tick = 1}, function(timer)
-            local dummy_entity = Game.FindEntityByID(self.dummy_entity_id)
-            if dummy_entity ~= nil then
-                Game.GetWorkspotSystem():StopInDevice(Game.GetPlayer())
-                Cron.After(0.1, function()
-                    Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true, "metro_workspot", nil, nil, 0, 1, nil)
-                    Game.GetWorkspotSystem():SendJumpToAnimEnt(player, "sit_chair_lean180__2h_on_lap__01", true)
-                end)
-                Cron.Every(0.01, {tick = 1}, function(timer)
-                    timer.tick = timer.tick + 1
-                    local dummy_entity = Game.FindEntityByID(self.dummy_entity_id)
-                    local pos = GetMountedVehicle(player):GetWorldPosition()
-                    local angle = GetMountedVehicle(player):GetWorldOrientation():ToEulerAngles()
-                    Game.GetTeleportationFacility():Teleport(dummy_entity, pos, angle)
-                    if timer.tick > 2000 then
-                        Cron.Halt(timer)
-                    end
-                end)
-                Cron.Halt(timer)
+            if self.past_pos == nil then
+                self.past_pos = Game.GetPlayer():GetWorldPosition()
+                return
             end
+            local current_pos = Game.GetPlayer():GetWorldPosition()
+            local diff = Vector4.new(current_pos.x - self.past_pos.x, current_pos.y - self.past_pos.y, current_pos.z - self.past_pos.z, 1)
+            local distance = Vector4.Length(diff)
+            print("player:" .. distance)
+            self.past_pos = Game.GetPlayer():GetWorldPosition()
         end)
         print("Excute Test Function 14")
+    end
+    ImGui.SameLine()
+    if ImGui.Button("TF15") then
+        local target = Game.GetTargetingSystem():GetObjectClosestToCrosshair(GetPlayer(), TSQ_ALL())
+        print(target)
+        print(target:GetWorldPosition().x .. ", " .. target:GetWorldPosition().y .. ", " .. target:GetWorldPosition().z)
+        print("Excute Test Function 15")
+    end
+    if ImGui.Button("TF16") then
+        local min_distance = 100
+        local min_index = 0
+        local player_pos = Game.GetPlayer():GetWorldPosition()
+        local arr = Game.GetPlayer():GetNPCsAroundObject()
+        for i, v in ipairs(arr) do
+            -- local inf = TweakDBInterface.new()
+            -- print(inf:GetCNameDefault(v:GetRecordID()).value)
+            -- print(v:GetCurrentAppearanceName().value)
+            local pos = v:GetWorldPosition()
+            local distnce = Vector4.Distance(player_pos, pos)
+            print(v:GetCurrentAppearanceName().value)
+            print(distnce)
+            if distnce < min_distance then
+                min_distance = distnce
+                min_index = i
+            end
+        end
+        Cron.Every(0.01, {tick = 1}, function(timer)
+            local pos = arr[min_index]:GetWorldPosition()
+            -- local player_pos = Game.GetPlayer():GetWorldPosition()
+            -- local diff = Vector4.new(pos.x - player_pos.x, pos.y - player_pos.y, pos.z - player_pos.z, 1)
+            -- local distance = Vector4.Length(diff)
+            -- print("player:" .. distance)
+            local local_pos = self.core_obj.metro_obj:ChangeLocalPosition(pos)
+            print(local_pos.x .. ", " .. local_pos.y .. ", " .. local_pos.z)
+        end)
+        print("Excute Test Function 16")
     end
 end
 

@@ -5,6 +5,8 @@
 --------------------------------------------------------
 
 Cron = require('External/Cron.lua')
+Def = require('Tools/def.lua')
+GameUI = require('External/GameUI.lua')
 Log = require("Tools/log.lua")
 
 local Core = require('Modules/core.lua')
@@ -12,7 +14,7 @@ local Debug = require('Debug/debug.lua')
 
 ITM = {
 	description = "Inside The Metro",
-	version = "0.1.0",
+	version = "1.0.0",
     is_debug_mode = true,
     -- version check
     cet_required_version = 32.2, -- 1.32.2
@@ -29,6 +31,8 @@ registerForEvent('onInit', function()
 
     ITM.core_obj = Core:New()
     ITM.debug_obj = Debug:New(ITM.core_obj)
+
+    ITM.core_obj:Init()
 
     print('Inside The Metro Mod is ready!')
 
