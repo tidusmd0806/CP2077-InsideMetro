@@ -53,19 +53,29 @@ function Core:SetObserverAction()
                 self.event_obj:SetStatus(Def.State.StandInsideMetro)
             elseif status == Def.State.StandInsideMetro then
                 self:DisableWalkingMetro()
-                self.event_obj:SetStatus(Def.State.SitInsideMetro)
+                -- self.event_obj:SetStatus(Def.State.SitInsideMetro)
             end
         end
     end)
 
 end
 
+function Core:ToggleFreezeMode(is_freeze)
+    if is_freeze then
+        Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.0)
+        TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", true, true)
+        TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), true)
+    else
+        Game.GetTimeSystem():UnsetTimeDilation(CName.new("pause"), "None")
+        TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", false, true)
+        TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), false)
+    end
+end
+
 function Core:EnableWalkingMetro()
 
     self.log_obj:Record(LogLevel.Info, "EnableWalkingMetro")
-    Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.0)
-    TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", true, true)
-    TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), true)
+    self:ToggleFreezeMode(true)
     local right_dir = self.metro_obj:GetWorldRight()
     local workspot_pos = self.metro_obj:GetAccurateWorldPosition(self.metro_obj:GetPlayerSeatPosition())
     local workspot_angle = Vector4.ToRotation(right_dir)
@@ -87,9 +97,7 @@ function Core:EnableWalkingMetro()
     self.player_obj:PlayPose(self.stand_up_anim, workspot_pos, workspot_angle)
     self:KeepWorkspotSeatPostion()
     Cron.After(0.2, function()
-        Game.GetTimeSystem():UnsetTimeDilation(CName.new("pause"), "None")
-        TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", false, true)
-        TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), false)
+        self:ToggleFreezeMode(false)
     end)
     Cron.After(self.wait_time_after_standup, function()
         self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
@@ -101,16 +109,15 @@ end
 function Core:DisableWalkingMetro()
 
     self.log_obj:Record(LogLevel.Info, "DisableWalkingMetro")
-    Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.0)
-    TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", true, true)
-    TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), true)
     self.metro_obj:Mount()
     Cron.Every(0.01, {tick = 1}, function(timer)
         if Game.GetPlayer():GetMountedVehicle() == nil then
             self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: Player is in vehicle")
             return
         end
-        Cron.After(0.1, function()
+        self.event_obj:SetStatus(Def.State.SitInsideMetro)
+        Cron.After(0.2, function()
+            self:ToggleFreezeMode(true)
             local right_dir = self.metro_obj:GetWorldRight()
             local workspot_pos = self.metro_obj:GetAccurateWorldPosition(self.metro_obj:GetPlayerSeatPosition())
             local workspot_angle = Vector4.ToRotation(right_dir)
@@ -129,14 +136,12 @@ function Core:DisableWalkingMetro()
                 workspot_angle.pitch = 0
                 workspot_angle.yaw = workspot_angle.yaw * -1
             end
+            Cron.After(0.5, function()
+                self:ToggleFreezeMode(false)
+            end)
             self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: PlayPose")
             self.player_obj:PlayPose(self.sit_down_anim, workspot_pos, workspot_angle)
-            Game.GetTeleportationFacility():Teleport( self.player_obj:GetWorkspotEntity(), workspot_pos, workspot_angle)
-            Cron.After(0.5, function()
-                Game.GetTimeSystem():UnsetTimeDilation(CName.new("pause"), "None")
-                TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", false, true)
-                TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), false)
-            end)
+            Game.GetTeleportationFacility():Teleport(self.player_obj:GetWorkspotEntity(), workspot_pos, workspot_angle)
         end)
         Cron.Halt(timer)
     end)

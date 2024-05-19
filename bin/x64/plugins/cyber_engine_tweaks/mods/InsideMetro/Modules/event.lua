@@ -12,7 +12,6 @@ function Event:New(player_obj, metro_obj)
     obj.current_status = Def.State.OutsideMetro
     obj.is_in_fast_travel = false
     obj.prev_player_local_pos = nil
-    obj.prev_npc_local_pos = nil
     obj.is_on_ground = false
     obj.is_touching_ground = false
     return setmetatable(obj, self)
@@ -48,6 +47,7 @@ function Event:SetStatus(status)
     elseif self.current_status == Def.State.SitInsideMetro and status == Def.State.StandInsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status to StandInsideMetro")
         self.current_status = Def.State.StandInsideMetro
+        self:SetRestrictions()
         return true
     elseif self.current_status == Def.State.StandInsideMetro and status == Def.State.WalkInsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status to WalkInsideMetro")
@@ -64,14 +64,37 @@ function Event:SetStatus(status)
     elseif self.current_status == Def.State.SitInsideMetro and status == Def.State.OutsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status to OutsideMetro")
         self.current_status = Def.State.OutsideMetro
+        self:RemoveRestrictions()
+        return true
     else
-        self.log_obj:Record(LogLevel.Critical, "Change Status Failed")
         return false
     end
 end
 
 function Event:GetStatus()
     return self.current_status
+end
+
+function Event:SetRestrictions()
+    local player = Game.GetPlayer()
+    SaveLocksManager.RequestSaveLockAdd(CName.new("InsideTheMetro"))
+    local no_jump = TweakDBID.new("GameplayRestriction.NoJump")
+    local no_sprint = TweakDBID.new("GameplayRestriction.NoSprint")
+    StatusEffectHelper.ApplyStatusEffect(player, no_jump)
+    StatusEffectHelper.ApplyStatusEffect(player, no_sprint)
+end
+
+function Event:RemoveRestrictions()
+    local player = Game.GetPlayer()
+    local no_jump = TweakDBID.new("GameplayRestriction.NoJump")
+    local no_sprint = TweakDBID.new("GameplayRestriction.NoSprint")
+    local res_1 = StatusEffectHelper.RemoveStatusEffect(player, no_jump)
+    local res_2 = StatusEffectHelper.RemoveStatusEffect(player, no_sprint)
+    if not res_1 or not res_2 then
+        self.log_obj:Record(LogLevel.Error, "Remove Restrictions Failed")
+        return
+    end
+    SaveLocksManager.RequestSaveLockRemove(CName.new("InsideTheMetro"))
 end
 
 function Event:CheckAllEvents()
@@ -147,34 +170,16 @@ end
 
 function Event:CheckSeatPosition()
 
-    if self.metro_obj:GetSpeed() < 0.001 then
+    if self.metro_obj:GetSpeed() < 0.001 and self.current_status == Def.State.SitInsideMetro and not self.is_set_seat_pos then
         self.log_obj:Record(LogLevel.Debug, "Player is in Seat Area")
         self.metro_obj:SetPlayerSeatPosition()
+    elseif self.metro_obj.entity == nil then
+        self.is_set_seat_pos = false
+    else
+        self.is_set_seat_pos = true
     end
 
 end
-
--- function Event:CheckInvalidMove()
-
---     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
---     local noc_local_pos = self.metro_obj:GetAccurateLocalPosition(self.metro_obj.measurement_npc_entity:GetWorldPosition())
---     if self.prev_player_local_pos == nil then
---         self.prev_player_local_pos = player_local_pos
---         self.prev_npc_local_pos = noc_local_pos
---         return
---     end
---     local prev_distance = Vector4.Distance(self.prev_player_local_pos, self.prev_npc_local_pos)
---     local current_distance = Vector4.Distance(player_local_pos, noc_local_pos)
---     local speed = (current_distance - prev_distance) / 0.01
---     -- if math.abs(speed) > 15 then
---     --     self.log_obj:Record(LogLevel.Warning, "Invalid Move")
---     --     local angle = Game.GetPlayer():GetWorldOrientation():ToEulerAngles()
---     --     Game.GetTeleportationFacility():Teleport(Game.GetPlayer(), self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos), angle)
---     -- end
---     self.prev_player_local_pos = player_local_pos
---     self.prev_npc_local_pos = noc_local_pos
-
--- end
 
 function Event:CheckTouchGround()
 
@@ -184,11 +189,12 @@ function Event:CheckTouchGround()
     if self.is_on_ground then
         return
     end
+    self.prev_player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
     self.is_touching_ground = true
     Cron.Every(0.001, {tick = 1}, function(timer)
         local player = Game.GetPlayer()
-        local pos = player:GetWorldPosition()
-        pos.z = pos.z - 0.2
+        self.prev_player_local_pos.z = self.prev_player_local_pos.z - 0.2
+        local pos = self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos)
         local angle = player:GetWorldOrientation():ToEulerAngles()
         Game.GetTeleportationFacility():Teleport(player, pos, angle)
         if self.is_on_ground then

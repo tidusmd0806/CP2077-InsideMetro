@@ -143,6 +143,9 @@ function Debug:ImGuiPlayerLocalPosition()
     self.is_im_gui_player_local = ImGui.Checkbox("[ImGui] Player Local Pos", self.is_im_gui_player_local)
     if self.is_im_gui_player_local then
         local player_pos = Game.GetPlayer():GetWorldPosition()
+        if self.core_obj.metro_obj.entity == nil or  self.core_obj.metro_obj.measurement_npc_position == nil then
+            return
+        end
         local player_local_pos = self.core_obj.metro_obj:ChangeWorldPosToLocal(player_pos)
         if player_local_pos == nil then
             return
@@ -195,8 +198,6 @@ function Debug:ImGuiMetroSpeed()
     if self.is_im_gui_metro_speed then
         local metro_speed = self.core_obj.metro_obj:GetSpeed()
         ImGui.Text("Metro Speed : " .. metro_speed)
-        local player_speed = self.core_obj.player_obj.current_speed
-        ImGui.Text("Player Speed : " .. player_speed)
     end
 end
 
@@ -237,7 +238,7 @@ end
 
 function Debug:ImGuiExcuteFunction()
     if ImGui.Button("TF1") then
-        self.core_obj:EnableWalkingMetro()
+        print(self.core_obj.metro_obj.entity.Z)
         print("Excute Test Function 1")
     end
     ImGui.SameLine()
@@ -247,8 +248,16 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF3") then
-        self.core_obj:Init()
-        print(self.core_obj.metro_obj.player_seat_position.x .. ", " .. self.core_obj.metro_obj.player_seat_position.y .. ", " .. self.core_obj.metro_obj.player_seat_position.z)
+        -- self.core_obj.metro_obj.entity:TogglePitchAdjustment(true)
+        -- self.core_obj.metro_obj.entity:PerformPitchAdjustment(500)
+        -- self.core_obj.metro_obj.entity:OnMetroPitchAdjustmentEvent(MetroPitchAdjustmentEvent.new())
+        self.core_obj.metro_obj.entity.Z = self.core_obj.metro_obj.entity.Z + 500
+        local entity = self.core_obj.metro_obj.entity
+        local pos = entity:GetWorldPosition()
+        pos.z = pos.z + 10
+        local angle = entity:GetWorldOrientation():ToEulerAngles()
+        Game.GetTeleportationFacility():Teleport(entity, pos, angle)
+        print(self.core_obj.metro_obj.entity.Z)
         print("Excute Test Function 3")
     end
     ImGui.SameLine()
