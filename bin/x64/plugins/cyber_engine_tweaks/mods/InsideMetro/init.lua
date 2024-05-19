@@ -14,7 +14,7 @@ local Debug = require('Debug/debug.lua')
 
 ITM = {
 	description = "Inside The Metro",
-	version = "1.0.0",
+	version = "0.1.0",
     is_debug_mode = true,
     -- version check
     cet_required_version = 32.2, -- 1.32.2
@@ -32,7 +32,7 @@ registerForEvent('onInit', function()
     ITM.core_obj = Core:New()
     ITM.debug_obj = Debug:New(ITM.core_obj)
 
-    ITM.core_obj:Init()
+    ITM.core_obj:Initialize()
 
     print('Inside The Metro Mod is ready!')
 

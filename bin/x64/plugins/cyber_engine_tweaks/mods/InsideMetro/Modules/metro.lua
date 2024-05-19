@@ -7,22 +7,30 @@ function Metro:New()
     obj.log_obj = Log:New()
     obj.log_obj:SetLevel(LogLevel.Info, "Metro")
     -- static --
-    obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 8.3, y_min = -8.0, z_max = 2.8, z_min = 0}
-    obj.default_position = {x = 0, y = 0, z = 0.5}
-    obj.seat_area_radius = 1.0
+    obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 10.0, y_min = -10.0, z_max = 3.5, z_min = -1.0}
+    obj.default_position = Vector4.new(0, 0, 1, 1)
+    obj.seat_area_radius = 2.0
     -- dynamic --
+    obj.is_ready = false
     obj.entity = nil
     obj.entity_id = nil
     obj.is_mounted_player = true
     obj.player_seat_position = nil
     obj.is_player_seat_right_side = true
     obj.measurement_npc_position = nil
+    obj.world_npc_position = nil
+    obj.current_speed = 0
     return setmetatable(obj, self)
 end
 
-function Metro:Init()
+function Metro:Initialize()
+    self.is_ready = true
     self:SetNPCForMeasurement()
-    self:SetPlayerSeatPosition()
+    self:SetSpeedObserver()
+end
+
+function Metro:Uninitialize()
+    self.is_ready = false
 end
 
 function Metro:SetEntity()
@@ -68,9 +76,10 @@ function Metro:GetWorldUp()
     return self.entity:GetWorldUp()
 end
 
-function Metro:ChangeLocalPosition(world_pos)
+function Metro:ChangeWorldPosToLocal(world_pos)
 
     if self.entity == nil then
+        self.log_obj:Record(LogLevel.Error, "ChangeWorldPosToLocal: entity is nil")
         return nil
     end
     local origin = self:GetWorldPosition()
@@ -85,20 +94,21 @@ function Metro:ChangeLocalPosition(world_pos)
 
 end
 
-function Metro:ChangeWorldPosition(local_pos)
+function Metro:ChangeLocalPosToWorld(local_pos)
 
     if self.entity == nil then
+        self.log_obj:Record(LogLevel.Error, "ChangeLocalPosToWorld: entity is nil")
         return nil
     end
     local origin = self:GetWorldPosition()
     local right = self:GetWorldRight()
     local forward = self:GetWorldForward()
     local up = self:GetWorldUp()
-    local x = Vector4.new(right.x * local_pos.x, right.y * local_pos.x, right.z * local_pos.x, 1)
-    local y = Vector4.new(forward.x * local_pos.y, forward.y * local_pos.y, forward.z * local_pos.y, 1)
-    local z = Vector4.new(up.x * local_pos.z, up.y * local_pos.z, up.z * local_pos.z, 1)
-    local world_pos = Vector4.new(x.x + y.x + z.x, x.y + y.y + z.y, x.z + y.z + z.z, 1)
-    return Vector4.new(origin.x + world_pos.x, origin.y + world_pos.y, origin.z + world_pos.z, 1)
+    local x = Vector4.new(right.x * local_pos.x, right.y * local_pos.x, right.z * local_pos.x, 0)
+    local y = Vector4.new(forward.x * local_pos.y, forward.y * local_pos.y, forward.z * local_pos.y, 0)
+    local z = Vector4.new(up.x * local_pos.z, up.y * local_pos.z, up.z * local_pos.z, 0)
+    local world_pos = Vector4.new(x.x + y.x + z.x + origin.x, x.y + y.y + z.y + origin.y, x.z + y.z + z.z + origin.z, 1)
+    return world_pos
 
 end
 
@@ -135,12 +145,12 @@ function Metro:SetNPCForMeasurement()
     for index, npc in ipairs(npcs) do
         local npc_pos = npc:GetWorldPosition()
         local distnce = Vector4.Distance(player_pos, npc_pos)
-        if distnce < min_distance and self:IsInMetro(self:ChangeLocalPosition(npc_pos)) then
+        if distnce < min_distance and self:IsInMetro(self:ChangeWorldPosToLocal(npc_pos)) then
             min_distance = distnce
             min_index = index
         end
     end
-    self.measurement_npc_position = self:ChangeLocalPosition(npcs[min_index]:GetWorldPosition())
+    self.measurement_npc_position = self:ChangeWorldPosToLocal(npcs[min_index]:GetWorldPosition())
     self.measurement_npc_entity = npcs[min_index]
 
 end
@@ -151,7 +161,7 @@ end
 
 function Metro:SetPlayerSeatPosition()
 
-    self.player_seat_position = self:ChangeLocalPosition(Game.GetPlayer():GetWorldPosition())
+    self.player_seat_position = self:ChangeWorldPosToLocal(Game.GetPlayer():GetWorldPosition())
     if self.player_seat_position.x > 0 then
         self.is_player_seat_right_side = true
     else
@@ -164,22 +174,60 @@ function Metro:IsPlayerSeatRightSide()
     return self.is_player_seat_right_side
 end
 
-function Metro:GetPlayerLocalPosition()
+function Metro:GetAccurateLocalPosition(world_pos)
 
     if self.measurement_npc_entity == nil then
         return nil
     end
-    local world_player_pos = Game.GetPlayer():GetWorldPosition()
     local world_npc_pos = self.measurement_npc_entity:GetWorldPosition()
     local world_metro_pos = self:GetWorldPosition()
-    local vector_from_p_to_n = Vector4.new(world_player_pos.x - world_npc_pos.x, world_player_pos.y - world_npc_pos.y, world_player_pos.z - world_npc_pos.z, 1)
+    local vector_from_p_to_n = Vector4.new(world_pos.x - world_npc_pos.x, world_pos.y - world_npc_pos.y, world_pos.z - world_npc_pos.z, 1)
     local world_direction = Vector4.new(world_metro_pos.x + vector_from_p_to_n.x, world_metro_pos.y + vector_from_p_to_n.y, world_metro_pos.z + vector_from_p_to_n.z, 1)
-    local vector_form_p_to_n_local = self:ChangeLocalPosition(world_direction)
+    local vector_form_p_to_n_local = self:ChangeWorldPosToLocal(world_direction)
     if vector_form_p_to_n_local == nil then
         return nil
     end
     return Vector4.new(self.measurement_npc_position.x + vector_form_p_to_n_local.x, self.measurement_npc_position.y + vector_form_p_to_n_local.y, self.measurement_npc_position.z + vector_form_p_to_n_local.z, 1)
 
+end
+
+function Metro:GetAccurateWorldPosition(local_pos)
+
+    if self.measurement_npc_entity == nil then
+        return nil
+    end
+    local world_npc_pos = self:ChangeLocalPosToWorld(self.measurement_npc_position)
+    local world_pos = self:ChangeLocalPosToWorld(local_pos)
+    local vector_from_p_to_n = Vector4.new(world_pos.x - world_npc_pos.x, world_pos.y - world_npc_pos.y, world_pos.z - world_npc_pos.z, 1)
+    local actual_npc_pos = self.measurement_npc_entity:GetWorldPosition()
+
+    return Vector4.new(actual_npc_pos.x + vector_from_p_to_n.x, actual_npc_pos.y + vector_from_p_to_n.y, actual_npc_pos.z + vector_from_p_to_n.z, 1)
+
+end
+
+function Metro:SetSpeedObserver()
+
+    Cron.Every(0.01, {tick = 1}, function(timer)
+        timer.tick = timer.tick + 1
+        if self.measurement_npc_entity == nil then
+            return
+        elseif self.world_npc_position == nil then
+            self.world_npc_position = self.measurement_npc_entity:GetWorldPosition()
+            return
+        end
+        local current_pos = self.measurement_npc_entity:GetWorldPosition()
+        local distance = Vector4.Distance(current_pos, self.world_npc_position)
+        self.current_speed = distance / 0.01
+        self.world_npc_position = current_pos
+        if not self.is_ready then
+            Cron.Helt(timer)
+        end
+    end)
+
+end
+
+function Metro:GetSpeed()
+    return self.current_speed
 end
 
 function Metro:Unmount()
@@ -243,14 +291,15 @@ end
 
 function Metro:TeleportToDefaultPosition()
 
-    local world_default_pos = self:ChangeWorldPosition(self.default_position)
+    local world_default_pos = self:GetAccurateWorldPosition(self.default_position)
     if world_default_pos == nil then
         self.log_obj:Record(LogLevel.Critical, "TeleportToDefaultPosition: world_default_pos is nil")
         return
     end
+    world_default_pos.z = self.measurement_npc_entity:GetWorldPosition().z
     local player = Game.GetPlayer()
-    local player_angle = player:GetWorldOrientation():ToEulerAngles()
-    Game.GetTeleportationFacility():Teleport(player, world_default_pos, player_angle)
+    local angle = Vector4.ToRotation(self:GetWorldForward())
+    Game.GetTeleportationFacility():Teleport(player, world_default_pos, angle)
 
 end
 

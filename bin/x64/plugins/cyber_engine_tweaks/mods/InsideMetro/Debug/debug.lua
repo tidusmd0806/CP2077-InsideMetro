@@ -12,9 +12,11 @@ function Debug:New(core_obj)
     obj.is_im_gui_check_anim = false
     obj.is_im_gui_player_local = false
     obj.is_im_gui_seat_position = false
+    obj.is_im_gui_metro_speed = false
     obj.is_set_observer = false
     obj.is_im_gui_measurement = false
     self.input_text_1 = ""
+    obj.switch = false
     return setmetatable(obj, self)
 end
 
@@ -30,6 +32,7 @@ function Debug:ImGuiMain()
     self:ImGuiCheckStatus()
     self:ImGuiPlayerLocalPosition()
     self:ImGuiSeatPosition()
+    self:ImGuiMetroSpeed()
     self:ImGuiMeasurement()
     self:ImGuiCheckAnim()
     self:ImGuiExcuteFunction()
@@ -42,9 +45,24 @@ function Debug:SetObserver()
 
     if not self.is_set_observer then
         -- reserved
-        Observe('DataTerm', 'OpenSubwayGate', function(this)
-            print('OpenSubwayGate')
-        end)
+        -- Observe('DataTerm', 'OpenSubwayGate', function(this)
+        --     print('OpenSubwayGate')
+        -- end)
+        -- Observe('gamehelperGameObjectEffectHelper', 'ActivateEffectAction', function(this, event)
+        --     print('ActivateEffectAction')
+        -- end)
+        -- Observe('gameIWorkspotGameSystem', 'PlayInDevice', function(this)
+        --     print('PlayInDevice')
+        -- end)
+        -- Observe('DataTerm', 'OnFastTravelPointsUpdated', function(this)
+        --     print('OnFastTravelPointsUpdated')
+        --     self.ft = this.linkedFastTravelPoint
+        --     self.ins = this
+        -- end)
+        -- Override("LocomotionTransition", "IsTouchingGround", function(this, script_interface, wrapped_method)
+        --     self.result = wrapped_method(script_interface)
+        --     return self.result
+        -- end)
     end
     self.is_set_observer = true
 
@@ -125,7 +143,7 @@ function Debug:ImGuiPlayerLocalPosition()
     self.is_im_gui_player_local = ImGui.Checkbox("[ImGui] Player Local Pos", self.is_im_gui_player_local)
     if self.is_im_gui_player_local then
         local player_pos = Game.GetPlayer():GetWorldPosition()
-        local player_local_pos = self.core_obj.metro_obj:ChangeLocalPosition(player_pos)
+        local player_local_pos = self.core_obj.metro_obj:ChangeWorldPosToLocal(player_pos)
         if player_local_pos == nil then
             return
         end
@@ -142,7 +160,7 @@ function Debug:ImGuiPlayerLocalPosition()
         local npc_position_y = string.format("%.2f", npc_pos.y)
         local npc_position_z = string.format("%.2f", npc_pos.z)
         ImGui.Text("NPC Measurement Pos : " .. npc_position_x .. ", " .. npc_position_y .. ", " .. npc_position_z)
-        local pos = self.core_obj.metro_obj:GetPlayerLocalPosition()
+        local pos = self.core_obj.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
         if pos == nil then
             return
         end
@@ -169,6 +187,16 @@ function Debug:ImGuiSeatPosition()
         else
             ImGui.Text("Seat Side : Left")
         end
+    end
+end
+
+function Debug:ImGuiMetroSpeed()
+    self.is_im_gui_metro_speed = ImGui.Checkbox("[ImGui] Metro Speed", self.is_im_gui_metro_speed)
+    if self.is_im_gui_metro_speed then
+        local metro_speed = self.core_obj.metro_obj:GetSpeed()
+        ImGui.Text("Metro Speed : " .. metro_speed)
+        local player_speed = self.core_obj.player_obj.current_speed
+        ImGui.Text("Player Speed : " .. player_speed)
     end
 end
 
@@ -214,7 +242,7 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF2") then
-        self.core_obj:DisableWalkingMetro()
+        Game.GetWorkspotSystem():MountToVehicle(self.core_obj.metro_obj.entity, Game.GetPlayer(), 1.0, 1.0, "trunkBodyDisposalPlayer", "Passengers")
         print("Excute Test Function 2")
     end
     ImGui.SameLine()
@@ -227,10 +255,10 @@ function Debug:ImGuiExcuteFunction()
     if ImGui.Button("TF4") then
         local entity = self.core_obj.metro_obj.entity:FindComponentByName("OccupantSlots"):GetEntity()
         local entity_pos = entity:GetWorldPosition()
-        local local_pos = self.core_obj.metro_obj:ChangeLocalPosition(entity_pos)
+        local local_pos = self.core_obj.metro_obj:ChangeWorldPosToLocal(entity_pos)
         print(entity_pos.x .. ", " .. entity_pos.y .. ", " .. entity_pos.z)
         print(local_pos.x .. ", " .. local_pos.y .. ", " .. local_pos.z)
-        local world_pos = self.core_obj.metro_obj:ChangeWorldPosition(local_pos)
+        local world_pos = self.core_obj.metro_obj:ChangeLocalPosToWorld(local_pos)
         print(world_pos.x .. ", " .. world_pos.y .. ", " .. world_pos.z)
         print("Excute Test Function 4")
     end
@@ -267,13 +295,16 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF6") then
-        local arr = self.core_obj.metro_obj.entity:FindComponentByName("OccupantSlots")
-        print(arr[1].x .. ", " .. arr[1].y .. ", " .. arr[1].z)
+        Game.GetWorkspotSystem():ResetPlaybackToStart(Game.GetPlayer())
         print("Excute Test Function 6")
     end
     if ImGui.Button("TF7") then
-        print(self.core_obj.metro_obj.entity.pitchingValue)
-        print(self.core_obj.metro_obj.entity.Z)
+        local player = Game.GetPlayer()
+        local cam = player:GetFPPCameraComponent()
+        cam:SetLocalOrientation(Quaternion.new(0, 0, 0, 1))
+        cam:SetZoom(0.5)
+        cam:Deactivate()
+        cam:Activate()
         print("Excute Test Function 7")
     end
     ImGui.SameLine()
@@ -329,73 +360,28 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF11") then
-        local player = Game.GetPlayer()
-        local transform = player:GetWorldTransform()
-        transform:SetPosition(player:GetWorldPosition())
-        local angles = player:GetWorldOrientation():ToEulerAngles()
-        transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
-
-        self.workspot_entity_id = exEntitySpawner.Spawn("base\\characters\\entities\\main_npc\\hanako.ent", transform, '')
-
-        Cron.Every(0.01, {tick = 1}, function(timer)
-            local dummy_entity = Game.FindEntityByID(self.workspot_entity_id)
-            if dummy_entity ~= nil then
-                local seat = "seat_back_left"
-                local lowLevelMountingInfo = MountingInfo;
-                local mountingRequest =  MountingRequest.new();
-                local mountData =  MountEventData.new();
-                local mountOptions =  MountEventOptions.new();
-                lowLevelMountingInfo.parentId = self.core_obj.metro_obj.entity:GetEntityID();
-                lowLevelMountingInfo.childId = self.workspot_entity_id
-                local slotID = NewObject('gamemountingMountingSlotId')
-                slotID.id = seat
-                lowLevelMountingInfo.slotId = slotID;
-                mountingRequest.lowLevelMountingInfo = lowLevelMountingInfo;
-                mountingRequest.preservePositionAfterMounting = true;
-                mountingRequest.mountData = mountData;
-                mountOptions.alive = true;
-                mountOptions.occupiedByNonFriendly = false;
-                mountingRequest.mountData.mountEventOptions = mountOptions;
-                Game.GetMountingFacility():Mount(mountingRequest);
-                
-                -- local command = 'AIMountCommand'
-                -- local cmd = NewObject(command)
-                -- local mountData = NewObject('handle:gameMountEventData')
-                -- mountData.slotName = CName.new(seat)
-                -- mountData.ignoreHLS = false
-                -- mountData.mountParentEntityId = self.core_obj.metro_obj.entity:GetEntityID()
-                -- mountData.isInstant = true
-                -- cmd.mountData = mountData
-
-                -- function executeCmd(objlook, cmd)
-                --     if objlook ~= nil or objlook ~= '' then
-                --         AIComponent = objlook:GetAIControllerComponent()
-                        
-                --         if (AIComponent ~= nil) then
-                --             AIComponent:SendCommand(cmd)
-                --         end
-                        
-                --     end
-                -- end
-                
-                -- executeCmd(dummy_entity,cmd)
-                print("Mount")
-                Cron.Halt(timer)
-            end
-        end)
+        local action = self.core_obj.action
+        local consumer = self.core_obj.consumer
+        Game.GetPlayer():OnAction(action, consumer)
 
         print("Excute Test Function 11")
     end
     ImGui.SameLine()
     if ImGui.Button("TF12") then
-        self.switch = not self.switch
         if self.switch then
-            Game.GetTimeSystem():SetIgnoreTimeDilationOnLocalPlayerZero(false)
-            Game.GetTimeSystem():UnsetTimeDilation("consoleCommand", "None")
+            -- Game.GetTimeSystem():SetIgnoreTimeDilationOnLocalPlayerZero(false)
+            -- Game.GetTimeSystem():UnsetTimeDilation("consoleCommand", "None")
+            Game.GetTimeSystem():UnsetTimeDilation(CName.new("pause"), "None")
+            TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", false, true)
+            TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), false)
         else
-            Game.GetTimeSystem():SetIgnoreTimeDilationOnLocalPlayerZero(true)
-            Game.GetTimeSystem():SetTimeDilation("consoleCommand", 0.0000000000001)
+            -- Game.GetTimeSystem():SetIgnoreTimeDilationOnLocalPlayerZero(true)
+            -- Game.GetTimeSystem():SetTimeDilation("consoleCommand", 0.0000000000001)
+            Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.0)
+            TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", true, true)
+            TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), true)
         end
+        self.switch = not self.switch
         print("Excute Test Function 12")
     end
     ImGui.SameLine()
@@ -422,9 +408,18 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF15") then
-        local target = Game.GetTargetingSystem():GetObjectClosestToCrosshair(GetPlayer(), TSQ_ALL())
-        print(target)
-        print(target:GetWorldPosition().x .. ", " .. target:GetWorldPosition().y .. ", " .. target:GetWorldPosition().z)
+        if not self.result then
+            Cron.Every(0.001, {tick = 1}, function(timer)
+                local player = Game.GetPlayer()
+                local pos = player:GetWorldPosition()
+                pos.z = pos.z - 0.2
+                local angle = player:GetWorldOrientation():ToEulerAngles()
+                Game.GetTeleportationFacility():Teleport(player, pos, angle)
+                if self.result then
+                    Cron.Halt(timer)
+                end
+            end)
+        end
         print("Excute Test Function 15")
     end
     if ImGui.Button("TF16") then
@@ -451,7 +446,7 @@ function Debug:ImGuiExcuteFunction()
             -- local diff = Vector4.new(pos.x - player_pos.x, pos.y - player_pos.y, pos.z - player_pos.z, 1)
             -- local distance = Vector4.Length(diff)
             -- print("player:" .. distance)
-            local local_pos = self.core_obj.metro_obj:ChangeLocalPosition(pos)
+            local local_pos = self.core_obj.metro_obj:ChangeWorldPosToLocal(pos)
             print(local_pos.x .. ", " .. local_pos.y .. ", " .. local_pos.z)
         end)
         print("Excute Test Function 16")
