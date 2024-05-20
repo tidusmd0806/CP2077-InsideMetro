@@ -9,7 +9,6 @@ function Debug:New(core_obj)
     -- set parameters
     obj.is_im_gui_rw_count = false
     obj.is_im_gui_check_status = false
-    obj.is_im_gui_check_anim = false
     obj.is_im_gui_player_local = false
     obj.is_im_gui_seat_position = false
     obj.is_im_gui_metro_speed = false
@@ -34,7 +33,6 @@ function Debug:ImGuiMain()
     self:ImGuiSeatPosition()
     self:ImGuiMetroSpeed()
     self:ImGuiMeasurement()
-    self:ImGuiCheckAnim()
     self:ImGuiExcuteFunction()
 
     ImGui.End()
@@ -101,41 +99,16 @@ function Debug:ImGuiShowRWCount()
     end
 end
 
-function Debug:ImGuiCheckAnim()
-    self.is_im_gui_check_anim = ImGui.Checkbox("[ImGui] check anim", self.is_im_gui_check_anim)
-    if self.is_im_gui_check_anim then
-        self.input_text_1 =  ImGui.InputText("##AnimName", self.input_text_1, 100)
-        if ImGui.Button("PlayAnim") then
-            local anim_name = CName.new(self.input_text_1)
-            local player = Game.GetPlayer()
-            local transform = player:GetWorldTransform()
-            transform:SetPosition(player:GetWorldPosition())
-            local angles = player:GetWorldOrientation():ToEulerAngles()
-            transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
-
-            local dummy_entity_id = exEntitySpawner.Spawn("base\\itm\\metro_workspot.ent", transform, '')
-
-            Cron.Every(0.01, {tick = 1}, function(timer)
-                local dummy_entity = Game.FindEntityByID(dummy_entity_id)
-                if dummy_entity ~= nil then
-                    Game.GetWorkspotSystem():StopInDevice(Game.GetPlayer())
-                    Cron.After(0.1, function()
-                        Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true, "metro_workspot", nil, nil, 0, 1, nil)
-                        Game.GetWorkspotSystem():SendJumpToAnimEnt(player, anim_name, true)
-                    end)
-                    Cron.Halt(timer)
-                end
-            end)
-            print("Excute Test Function 1")
-        end
-    end
-end
-
 function Debug:ImGuiCheckStatus()
     self.is_im_gui_check_status = ImGui.Checkbox("[ImGui] Check Status", self.is_im_gui_check_status)
     if self.is_im_gui_check_status then
         local status = self.core_obj.event_obj.current_status
         ImGui.Text("Status : " .. status)
+        if Game.GetWorkspotSystem():IsActorInWorkspot(Game.GetPlayer()) then
+            ImGui.Text("In Workspot : True")
+        else
+            ImGui.Text("In Workspot : False")
+        end
     end
 end
 
@@ -304,7 +277,12 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF6") then
-        Game.GetWorkspotSystem():ResetPlaybackToStart(Game.GetPlayer())
+        local current_pos = Game.GetPlayer():GetWorldPosition()
+        local next_pos = Vector4.new(current_pos.x, current_pos.y, current_pos.z - 5, 1)
+        local filter = "Static"
+        local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(current_pos, next_pos, filter, false, false)
+        local pos = trace.position
+        print(pos.x .. ", " .. pos.y .. ", " .. pos.z)
         print("Excute Test Function 6")
     end
     if ImGui.Button("TF7") then

@@ -18,17 +18,6 @@ function Player:New()
     return setmetatable(obj, self)
 end
 
-function Player:Initialize()
-    self.is_ready = true
-    -- self:SetSpeedObserver()
-end
-
-function Player:Uninitialize()
-    self.is_ready = false
-    self:DeleteWorkspot()
-    self:SetFailSafeMode(false)
-end
-
 function Player:DeleteWorkspot()
     if self.workspot_entity ~= nil then
         exEntitySpawner.Despawn(self.workspot_entity)
