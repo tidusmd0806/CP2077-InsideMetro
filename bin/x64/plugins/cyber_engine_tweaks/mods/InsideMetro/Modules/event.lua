@@ -118,7 +118,7 @@ end
 
 function Event:CheckInsideMetro()
 
-    if self.metro_obj:SetEntity() then
+    if self.metro_obj:IsMountedPlayer() then
         self.log_obj:Record(LogLevel.Info, "Detect Inside Metro")
         self:SetStatus(Def.State.SitInsideMetro)
         Cron.Every(0.1, {tick = 1}, function(timer)
@@ -135,8 +135,8 @@ function Event:CheckInsideMetro()
 end
 
 function Event:CheckOutsideMetro()
-
-    if not self.metro_obj:SetEntity() then
+    -- need to add another check
+    if not self.metro_obj:IsMountedPlayer() then
         self.log_obj:Record(LogLevel.Info, "Detect Outside Metro")
         self:SetStatus(Def.State.OutsideMetro)
         self.metro_obj:Uninitialize()
@@ -187,9 +187,9 @@ function Event:CheckTouchGround()
         return
     end
     if self.is_on_ground then
+        self.prev_player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
         return
     end
-    self.prev_player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
     self.is_touching_ground = true
     Cron.Every(0.001, {tick = 1}, function(timer)
         local player = Game.GetPlayer()
