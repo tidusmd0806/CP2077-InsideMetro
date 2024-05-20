@@ -11,7 +11,6 @@ function Metro:New()
     obj.default_position = Vector4.new(0, 0, 1, 1)
     obj.seat_area_radius = 2.0
     -- dynamic --
-    obj.is_ready = false
     obj.entity = nil
     obj.entity_id = nil
     obj.is_mounted_player = true
@@ -24,13 +23,14 @@ function Metro:New()
 end
 
 function Metro:Initialize()
-    self.is_ready = true
+    self:SetEntity()
     self:SetNPCForMeasurement()
     self:SetSpeedObserver()
 end
 
 function Metro:Uninitialize()
-    self.is_ready = false
+    self.entity = nil
+    self.entity_id = nil
 end
 
 function Metro:SetEntity()
@@ -46,14 +46,21 @@ function Metro:SetEntity()
         self.entity_id = self.entity:GetEntityID()
         return true
     else
-        self.entity = nil
-        self.entity_id = nil
         return false
     end
 end
 
 function Metro:IsMountedPlayer()
-    return self.is_mounted_player
+    local entity = GetMountedVehicle(Game.GetPlayer())
+    if entity == nil then
+        return false
+    elseif self.entity == entity and self.entity_id == entity:GetEntityID() then
+        return true
+    elseif entity:GetClassName().value == "ncartMetroObject" then
+        return true
+    else
+        return false
+    end
 end
 
 function Metro:GetWorldPosition()
@@ -209,7 +216,10 @@ function Metro:SetSpeedObserver()
 
     Cron.Every(0.01, {tick = 1}, function(timer)
         timer.tick = timer.tick + 1
-        if self.measurement_npc_entity == nil then
+        if self.entity == nil then
+            Cron.Halt(timer)
+            return
+        elseif self.measurement_npc_entity == nil then
             return
         elseif self.world_npc_position == nil then
             self.world_npc_position = self.measurement_npc_entity:GetWorldPosition()
@@ -219,9 +229,6 @@ function Metro:SetSpeedObserver()
         local distance = Vector4.Distance(current_pos, self.world_npc_position)
         self.current_speed = distance / 0.01
         self.world_npc_position = current_pos
-        if not self.is_ready then
-            Cron.Helt(timer)
-        end
     end)
 
 end
