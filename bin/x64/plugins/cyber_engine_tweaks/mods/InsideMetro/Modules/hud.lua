@@ -56,7 +56,7 @@ end
 
 function HUD:SetSitHint()
 
-    local hint_table = {{action = "CallVehicle", source = "itm_stand", holdIndicationType = "FromInputConfig", sortingPriority = 0, enableHoldAnimation = false, localizedLabel = "LocKey#37918"}}
+    local hint_table = {{action = "CallVehicle", source = "itm_stand", holdIndicationType = "FromInputConfig", sortingPriority = 0, enableHoldAnimation = false, localizedLabel = "LocKey#522"}}
     self.show_sit_hint_event = UpdateInputHintMultipleEvent.new()
     self.hide_sit_hint_event = UpdateInputHintMultipleEvent.new()
     self.show_sit_hint_event.targetHintContainer = CName.new("GameplayInputHelper")

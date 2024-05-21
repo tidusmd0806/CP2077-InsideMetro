@@ -27,6 +27,15 @@ function Event:Initialize()
 
 end
 
+function Event:ResetParam()
+
+    self.prev_player_local_pos = nil
+    self.is_on_ground = false
+    self.is_touching_ground = false
+    self.is_sitting = false
+
+end
+
 function Event:SetTouchGroundObserver()
 
     Override("LocomotionTransition", "IsTouchingGround", function(this, script_interface, wrapped_method)
@@ -69,8 +78,9 @@ function Event:SetStatus(status)
     elseif self.current_status == Def.State.SitInsideMetro and status == Def.State.OutsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status to OutsideMetro")
         self.current_status = Def.State.OutsideMetro
-        self.hud_obj:HideStandHint() 
+        self.hud_obj:HideStandHint()
         self:RemoveRestrictions()
+        self:ResetParam()
         return true
     else
         return false
@@ -155,10 +165,10 @@ function Event:CheckSeatArea()
 
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
     if self.metro_obj:IsInSeatArea(player_local_pos) then
-        self.log_obj:Record(LogLevel.Trace, "Player is in Seat Area")
+        self.log_obj:Record(LogLevel.Debug, "Player is in Seat Area")
         self:SetStatus(Def.State.StandInsideMetro)
     else
-        self.log_obj:Record(LogLevel.Trace, "Player is not in Seat Area")
+        self.log_obj:Record(LogLevel.Debug, "Player is not in Seat Area")
         self:SetStatus(Def.State.WalkInsideMetro)
     end
 
@@ -190,16 +200,36 @@ end
 function Event:CheckTouchGround()
 
     local player = Game.GetPlayer()
+    local player_pos = player:GetWorldPosition()
+    local local_player_pos = self.metro_obj:GetAccurateLocalPosition(player_pos)
+    local metro_forward = self.metro_obj:GetWorldForward()
+    local metro_forward_2d = Vector4.Normalize(Vector4.new(metro_forward.x, metro_forward.y, 0, 1))
+    local search_pos_1 = Vector4.new(player_pos.x + metro_forward_2d.x, player_pos.y + metro_forward_2d.y, player_pos.z - 1.5, 1)
+    local search_pos_2 = Vector4.new(player_pos.x + metro_forward_2d.x, player_pos.y + metro_forward_2d.y, player_pos.z, 1)
+    local search_pos_3 = Vector4.new(player_pos.x - metro_forward_2d.x, player_pos.y - metro_forward_2d.y, player_pos.z - 1.5, 1)
+    local search_pos_4 = Vector4.new(player_pos.x - metro_forward_2d.x, player_pos.y - metro_forward_2d.y, player_pos.z, 1)
+    local search_list = {search_pos_1, search_pos_2, search_pos_3, search_pos_4}
+    for _, search_pos in ipairs(search_list) do
+        local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, search_pos, "Static", false, false)
+        if res and self.metro_obj:IsInMetro(local_player_pos) then
+            if trace.material.value == "concrete.physmat" and not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
+                self.log_obj:Record(LogLevel.Trace, "Touch Concrete")
+                local pos = self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos)
+                local angle = player:GetWorldOrientation():ToEulerAngles()
+                Game.GetTeleportationFacility():Teleport(player, pos, angle)
+                return
+            end
+        end
+    end
     if self.is_touching_ground then
-        local local_player_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
-        local_player_pos.z = local_player_pos.z - 0.03
-        local pos = self.metro_obj:GetAccurateWorldPosition(local_player_pos)
-        local angle = player:GetWorldOrientation():ToEulerAngles()
-        Game.GetTeleportationFacility():Teleport(player, pos, angle)
+        -- local_player_pos.z = local_player_pos.z - 0.03
+        -- local pos = self.metro_obj:GetAccurateWorldPosition(local_player_pos)
+        -- local angle = player:GetWorldOrientation():ToEulerAngles()
+        -- Game.GetTeleportationFacility():Teleport(player, pos, angle)
         return
     end
     if self.is_on_ground then
-        self.prev_player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
+        self.prev_player_local_pos = local_player_pos
         return
     end
     self.is_touching_ground = true
@@ -208,24 +238,11 @@ function Event:CheckTouchGround()
         local pos = self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos)
         local angle = player:GetWorldOrientation():ToEulerAngles()
         Game.GetTeleportationFacility():Teleport(player, pos, angle)
-        if self.is_on_ground then
+        if self.is_on_ground or not self.metro_obj:IsInMetro(self.prev_player_local_pos) then
             self.is_touching_ground = false
             Cron.Halt(timer)
         end
     end)
-
-    -- local player = Game.GetPlayer()
-    -- local player_pos = player:GetWorldPosition()
-    -- local local_player_pos = self.metro_obj:GetAccurateLocalPosition(player_pos)
-    -- local search_pos = Vector4.new(player_pos.x, player_pos.y, player_pos.z - 5, 1)
-    -- local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, search_pos, "Static", false, false)
-    -- if res then
-    --     local local_collision_pos = self.metro_obj:GetAccurateLocalPosition(trace.position)
-    --     local new_local_pos = Vector4.new(local_player_pos.x, local_player_pos.y, local_collision_pos.z + 0.5, 1)
-    --     print("new_local_pos: ", new_local_pos.x .. ", " .. new_local_pos.y .. ", " .. new_local_pos.z)
-    --     print("local_player_pos: ", local_player_pos.x .. ", " .. local_player_pos.y .. ", " .. local_player_pos.z)
-    --     Game.GetTeleportationFacility():Teleport(player, self.metro_obj:GetAccurateWorldPosition(new_local_pos), player:GetWorldOrientation():ToEulerAngles())
-    -- end
 
 end
 

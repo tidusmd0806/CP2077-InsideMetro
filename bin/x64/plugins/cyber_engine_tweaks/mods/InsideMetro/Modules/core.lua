@@ -19,7 +19,7 @@ function Core:New()
     obj.wait_time_after_standup = 3.5
     obj.wait_time_after_sitdown = 0.01
     obj.seat_forward_offset = 0.8
-    obj.sit_position_offset = -0.2
+    obj.sit_position_offset = 0
     obj.stand_up_anim = "sit_chair_lean0__2h_elbow_on_knees__01__to__stand__2h_on_sides__01__turn0__q005_01__01"
     obj.sit_down_anim = "sit_chair_lean180__2h_on_lap__01"
     return setmetatable(obj, self)
@@ -81,15 +81,15 @@ function Core:EnableWalkingMetro()
         workspot_pos.x = workspot_pos.x - right_dir.x * self.seat_forward_offset
         workspot_pos.y = workspot_pos.y - right_dir.y * self.seat_forward_offset
         workspot_pos.z = workspot_pos.z - right_dir.z * self.seat_forward_offset
-        workspot_angle.roll = 0
-        workspot_angle.pitch = 0
+        -- workspot_angle.roll = 0
+        -- workspot_angle.pitch = 0
         workspot_angle.yaw = workspot_angle.yaw
     else
         workspot_pos.x = workspot_pos.x + right_dir.x * self.seat_forward_offset
         workspot_pos.y = workspot_pos.y + right_dir.y * self.seat_forward_offset
         workspot_pos.z = workspot_pos.z + right_dir.z * self.seat_forward_offset
-        workspot_angle.roll = 0
-        workspot_angle.pitch = 0
+        -- workspot_angle.roll = 0
+        -- workspot_angle.pitch = 0
         workspot_angle.yaw = workspot_angle.yaw * -1
     end
     self.player_obj:PlayPose(self.stand_up_anim, workspot_pos, workspot_angle)
@@ -114,7 +114,7 @@ function Core:DisableWalkingMetro()
             return
         end
         self.event_obj:SetStatus(Def.State.SitInsideMetro)
-        Cron.After(0.2, function()
+        Cron.After(0.3, function()
             self:SetFreezeMode(true)
             local right_dir = self.metro_obj:GetWorldRight()
             local workspot_pos = self.metro_obj:GetAccurateWorldPosition(self.metro_obj:GetPlayerSeatPosition())
@@ -123,15 +123,15 @@ function Core:DisableWalkingMetro()
                 workspot_pos.x = workspot_pos.x
                 workspot_pos.y = workspot_pos.y
                 workspot_pos.z = workspot_pos.z + self.sit_position_offset
-                workspot_angle.roll = 0
-                workspot_angle.pitch = 0
+                -- workspot_angle.roll = 0
+                -- workspot_angle.pitch = 0
                 workspot_angle.yaw = workspot_angle.yaw
             else
                 workspot_pos.x = workspot_pos.x
                 workspot_pos.y = workspot_pos.y
                 workspot_pos.z = workspot_pos.z + self.sit_position_offset
-                workspot_angle.roll = 0
-                workspot_angle.pitch = 0
+                -- workspot_angle.roll = 0
+                -- workspot_angle.pitch = 0
                 workspot_angle.yaw = workspot_angle.yaw * -1
             end
             self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: PlayPose")
@@ -139,7 +139,6 @@ function Core:DisableWalkingMetro()
             Cron.After(0.5, function()
                 self:SetFreezeMode(false)
             end)
-            -- Game.GetTeleportationFacility():Teleport(self.player_obj:GetWorkspotEntity(), workspot_pos, workspot_angle)
         end)
         Cron.Halt(timer)
     end)
@@ -162,15 +161,15 @@ function Core:KeepWorkspotSeatPostion()
             pos.x = pos.x - right_dir.x * self.seat_forward_offset
             pos.y = pos.y - right_dir.y * self.seat_forward_offset
             pos.z = pos.z - right_dir.z * self.seat_forward_offset
-            angle.roll = 0
-            angle.pitch = 0
+            -- angle.roll = 0
+            -- angle.pitch = 0
             angle.yaw = angle.yaw
         else
             pos.x = pos.x + right_dir.x * self.seat_forward_offset
             pos.y = pos.y + right_dir.y * self.seat_forward_offset
             pos.z = pos.z + right_dir.z * self.seat_forward_offset
-            angle.roll = 0
-            angle.pitch = 0
+            -- angle.roll = 0
+            -- angle.pitch = 0
             angle.yaw = angle.yaw * -1
         end
         if pos == nil or angle == nil then
