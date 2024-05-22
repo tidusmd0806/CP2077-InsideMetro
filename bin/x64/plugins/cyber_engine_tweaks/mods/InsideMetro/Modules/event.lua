@@ -11,12 +11,15 @@ function Event:New(player_obj, metro_obj)
     obj.hud_obj = HUD:New(metro_obj)
     obj.player_obj = player_obj
     obj.metro_obj = metro_obj
+    -- static --
+    obj.stand_rock_time = 5
     -- dynamic --
     obj.current_status = Def.State.OutsideMetro
     obj.prev_player_local_pos = metro_obj.default_position
     obj.is_on_ground = false
     obj.is_touching_ground = false
     obj.is_sitting = false
+    obj.invalid_pos_count = 0
     return setmetatable(obj, self)
 end
 
@@ -49,7 +52,11 @@ function Event:SetStatus(status)
         self.log_obj:Record(LogLevel.Info, "Change Status to SitInsideMetro")
         self.current_status = Def.State.SitInsideMetro
         self:SetRestrictions()
-        self.hud_obj:ShowStandHint()
+        self.is_locked_stand = true
+        Cron.After(self.stand_rock_time + 5, function()
+            self.hud_obj:ShowStandHint()
+            self.is_locked_stand = false
+        end)
         return true
     elseif self.current_status == Def.State.SitInsideMetro and status == Def.State.StandInsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status to StandInsideMetro")
@@ -70,8 +77,12 @@ function Event:SetStatus(status)
     elseif self.current_status == Def.State.StandInsideMetro and status == Def.State.SitInsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status to SitInsideMetro")
         self.current_status = Def.State.SitInsideMetro
-        self.hud_obj:ShowStandHint()
         self.hud_obj:HideSitHint()
+        self.is_locked_stand = true
+        Cron.After(self.stand_rock_time, function()
+            self.hud_obj:ShowStandHint()
+            self.is_locked_stand = false
+        end)
         return true
     elseif self.current_status == Def.State.SitInsideMetro and status == Def.State.OutsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status to OutsideMetro")
@@ -83,6 +94,10 @@ function Event:SetStatus(status)
     else
         return false
     end
+end
+
+function Event:IsLockedStand()
+    return self.is_locked_stand
 end
 
 function Event:GetStatus()
@@ -117,7 +132,7 @@ function Event:CheckAllEvents()
         self:CheckInsideMetro()
     elseif self.current_status == Def.State.SitInsideMetro then
         self:CheckOutsideMetro()
-        self:CheckSeatPosition()
+        -- self:CheckSeatPosition()
     elseif self.current_status == Def.State.StandInsideMetro then
         self:CheckInvalidPosition()
         self:CheckSeatArea()
@@ -177,7 +192,13 @@ function Event:CheckInvalidPosition()
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
     if not self.metro_obj:IsInMetro(player_local_pos) then
         self.log_obj:Record(LogLevel.Warning, "Player is not in Metro")
-        self.metro_obj:TeleportToSafePosition(self.prev_player_local_pos)
+        self.metro_obj:TeleportToSafePosition()
+        Cron.Every(0.001, {tick = 1}, function(timer)
+            if self.is_on_ground or not self.metro_obj:TeleportLocalDownPos(-0.1) then
+                timer.Halt(timer)
+                return
+            end
+        end)
     end
 
 end
@@ -187,8 +208,8 @@ function Event:CheckSeatPosition()
     if self.metro_obj:GetSpeed() < 0.001 and self.current_status == Def.State.SitInsideMetro and not self.is_set_seat_pos then
         self.log_obj:Record(LogLevel.Debug, "Player is in Seat Area")
         self.metro_obj:SetPlayerSeatPosition()
-    elseif self.metro_obj.entity == nil then
-        self.is_set_seat_pos = false
+    -- elseif self.metro_obj.entity == nil then
+    --     self.is_set_seat_pos = false
     else
         self.is_set_seat_pos = true
     end
@@ -212,7 +233,7 @@ function Event:CheckTouchGround()
     local search_list = {search_pos_1, search_pos_2, search_pos_3, search_pos_4}
     for _, search_pos in ipairs(search_list) do
         local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, search_pos, "Static", false, false)
-        if res and self.metro_obj:IsInMetro(local_player_pos) then
+        if res then
             if trace.material.value == "concrete.physmat" and not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
                 self.log_obj:Record(LogLevel.Trace, "Touch Concrete")
                 local pos = self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos)

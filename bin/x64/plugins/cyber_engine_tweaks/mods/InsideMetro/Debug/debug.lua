@@ -150,6 +150,14 @@ function Debug:ImGuiPlayerLocalPosition()
         local player_pos_y = string.format("%.2f", pos.y)
         local player_pos_z = string.format("%.2f", pos.z)
         ImGui.Text("Player Local Pos Correctly : " .. player_pos_x .. ", " .. player_pos_y .. ", " .. player_pos_z)
+        local prev_pos = self.core_obj.event_obj.prev_player_local_pos
+        if prev_pos == nil then
+            return
+        end
+        local prev_pos_x = string.format("%.2f", prev_pos.x)
+        local prev_pos_y = string.format("%.2f", prev_pos.y)
+        local prev_pos_z = string.format("%.2f", prev_pos.z)
+        ImGui.Text("Player Prev Pos : " .. prev_pos_x .. ", " .. prev_pos_y .. ", " .. prev_pos_z)
     end
 end
 
