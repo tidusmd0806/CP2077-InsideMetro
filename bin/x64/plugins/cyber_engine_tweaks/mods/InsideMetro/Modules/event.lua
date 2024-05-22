@@ -13,7 +13,7 @@ function Event:New(player_obj, metro_obj)
     obj.metro_obj = metro_obj
     -- dynamic --
     obj.current_status = Def.State.OutsideMetro
-    obj.prev_player_local_pos = nil
+    obj.prev_player_local_pos = metro_obj.default_position
     obj.is_on_ground = false
     obj.is_touching_ground = false
     obj.is_sitting = false
@@ -21,15 +21,13 @@ function Event:New(player_obj, metro_obj)
 end
 
 function Event:Initialize()
-
     self:SetTouchGroundObserver()
     self.hud_obj:Initialize()
-
 end
 
 function Event:ResetParam()
 
-    self.prev_player_local_pos = nil
+    self.prev_player_local_pos = self.metro_obj.default_position
     self.is_on_ground = false
     self.is_touching_ground = false
     self.is_sitting = false
@@ -179,7 +177,7 @@ function Event:CheckInvalidPosition()
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
     if not self.metro_obj:IsInMetro(player_local_pos) then
         self.log_obj:Record(LogLevel.Warning, "Player is not in Metro")
-        self.metro_obj:TeleportToSafePosition()
+        self.metro_obj:TeleportToSafePosition(self.prev_player_local_pos)
     end
 
 end
@@ -202,6 +200,9 @@ function Event:CheckTouchGround()
     local player = Game.GetPlayer()
     local player_pos = player:GetWorldPosition()
     local local_player_pos = self.metro_obj:GetAccurateLocalPosition(player_pos)
+    if not self.metro_obj:IsInMetro(local_player_pos) then
+        return
+    end
     local metro_forward = self.metro_obj:GetWorldForward()
     local metro_forward_2d = Vector4.Normalize(Vector4.new(metro_forward.x, metro_forward.y, 0, 1))
     local search_pos_1 = Vector4.new(player_pos.x + metro_forward_2d.x, player_pos.y + metro_forward_2d.y, player_pos.z - 1.5, 1)
@@ -221,28 +222,29 @@ function Event:CheckTouchGround()
             end
         end
     end
-    if self.is_touching_ground then
+    -- if self.is_touching_ground then
         -- local_player_pos.z = local_player_pos.z - 0.03
         -- local pos = self.metro_obj:GetAccurateWorldPosition(local_player_pos)
         -- local angle = player:GetWorldOrientation():ToEulerAngles()
         -- Game.GetTeleportationFacility():Teleport(player, pos, angle)
-        return
-    end
+    --     return
+    -- end
     if self.is_on_ground then
         self.prev_player_local_pos = local_player_pos
         return
     end
-    self.is_touching_ground = true
-    Cron.Every(0.001, {tick = 1}, function(timer)
-        self.prev_player_local_pos.z = self.prev_player_local_pos.z - 0.1
-        local pos = self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos)
-        local angle = player:GetWorldOrientation():ToEulerAngles()
-        Game.GetTeleportationFacility():Teleport(player, pos, angle)
-        if self.is_on_ground or not self.metro_obj:IsInMetro(self.prev_player_local_pos) then
-            self.is_touching_ground = false
-            Cron.Halt(timer)
-        end
-    end)
+    -- self.is_touching_ground = true
+    -- Cron.Every(0.001, {tick = 1}, function(timer)
+    self.log_obj:Record(LogLevel.Trace, "Is not touching ground")
+    self.prev_player_local_pos.z = self.prev_player_local_pos.z - 0.1
+    local pos = self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos)
+    local angle = player:GetWorldOrientation():ToEulerAngles()
+    Game.GetTeleportationFacility():Teleport(player, pos, angle)
+        -- if self.is_on_ground or not self.metro_obj:IsInMetro(self.prev_player_local_pos) then
+        --     self.is_touching_ground = false
+        --     Cron.Halt(timer)
+        -- end
+    -- end)
 
 end
 

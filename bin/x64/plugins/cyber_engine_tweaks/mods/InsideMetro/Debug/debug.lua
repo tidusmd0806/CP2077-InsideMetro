@@ -61,6 +61,12 @@ function Debug:SetObserver()
         --     self.result = wrapped_method(script_interface)
         --     return self.result
         -- end)
+        -- Observe("PlayerPuppet", "QueueEvent", function(this, event)
+        --     print(event:GetClassName().value)
+        --     if event:GetClassName().value == "enteventsPhysicalCollisionEvent" then
+        --         print("collision")
+        --     end
+        -- end)
     end
     self.is_set_observer = true
 
@@ -347,10 +353,10 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF11") then
-        local action = self.core_obj.action
-        local consumer = self.core_obj.consumer
-        Game.GetPlayer():OnAction(action, consumer)
-
+        local player = Game.GetPlayer()
+        local com = player:GetMovePolicesComponent()
+        local policy = com:GetTopPolicies()
+        policy:SetCollisionAvoidancePolicy(true,true)
         print("Excute Test Function 11")
     end
     ImGui.SameLine()

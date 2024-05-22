@@ -306,9 +306,10 @@ function Metro:Mount()
 
 end
 
-function Metro:TeleportToSafePosition()
+function Metro:TeleportToSafePosition(safe_pos)
 
-    local world_safe_pos = self:GetAccurateWorldPosition(self.default_position)
+    safe_pos.y = safe_pos.y + 2
+    local world_safe_pos = self:GetAccurateWorldPosition(safe_pos)
     if world_safe_pos == nil then
         self.log_obj:Record(LogLevel.Critical, "TeleportToSafePosition: safe_pos is nil")
         return
