@@ -53,7 +53,8 @@ function Event:SetStatus(status)
         self.current_status = Def.State.SitInsideMetro
         self:SetRestrictions()
         self.is_locked_stand = true
-        Cron.After(self.stand_rock_time + 5, function()
+        Cron.After(self.stand_rock_time, function()
+            self.metro_obj:SetPlayerSeatPosition()
             self.hud_obj:ShowStandHint()
             self.is_locked_stand = false
         end)
@@ -193,23 +194,21 @@ function Event:CheckInvalidPosition()
     if not self.metro_obj:IsInMetro(player_local_pos) then
         self.log_obj:Record(LogLevel.Warning, "Player is not in Metro")
         self.metro_obj:TeleportToSafePosition()
-        Cron.Every(0.001, {tick = 1}, function(timer)
-            if self.is_on_ground or not self.metro_obj:TeleportLocalDownPos(-0.1) then
-                timer.Halt(timer)
-                return
-            end
-        end)
+        -- Cron.Every(0.001, {tick = 1}, function(timer)
+        --     if self.is_on_ground or not self.metro_obj:TeleportLocalDownPos(-0.1) then
+        --         timer.Halt(timer)
+        --         return
+        --     end
+        -- end)
     end
 
 end
 
 function Event:CheckSeatPosition()
 
-    if self.metro_obj:GetSpeed() < 0.001 and self.current_status == Def.State.SitInsideMetro and not self.is_set_seat_pos then
+    if self.metro_obj:GetSpeed() < 0.001 and not self.is_set_seat_pos then
         self.log_obj:Record(LogLevel.Debug, "Player is in Seat Area")
         self.metro_obj:SetPlayerSeatPosition()
-    -- elseif self.metro_obj.entity == nil then
-    --     self.is_set_seat_pos = false
     else
         self.is_set_seat_pos = true
     end

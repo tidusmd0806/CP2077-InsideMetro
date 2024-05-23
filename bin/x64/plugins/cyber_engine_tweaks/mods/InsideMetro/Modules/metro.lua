@@ -8,7 +8,7 @@ function Metro:New()
     obj.log_obj:SetLevel(LogLevel.Info, "Metro")
     -- static --
     obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 8.5, y_min = -8.5, z_max = 2.0, z_min = -0.2}
-    obj.default_position = Vector4.new(0, -6, 0.8, 1)
+    obj.default_position = Vector4.new(0, -6, 1.5, 1)
     obj.seat_area_radius = 1.5
     -- dynamic --
     obj.entity = nil
@@ -168,13 +168,14 @@ end
 
 function Metro:SetPlayerSeatPosition()
 
+    self.log_obj:Record(LogLevel.Trace, "SetPlayerSeatPosition")
     self.player_seat_position = self:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
     if self.player_seat_position.x > 0 then
         self.is_player_seat_right_side = true
-        self.player_seat_position.x = self.player_seat_position.x - 1
+        -- self.player_seat_position.x = self.player_seat_position.x - 1
     else
         self.is_player_seat_right_side = false
-        self.player_seat_position.x = self.player_seat_position.x + 1
+        -- self.player_seat_position.x = self.player_seat_position.x + 1
     end
 
 end
@@ -321,15 +322,10 @@ function Metro:TeleportToSafePosition()
 
 end
 
-function Metro:TeleportLocalDownPos(z)
+function Metro:TeleportLocalDownPos(base_pos, z)
 
-    local local_player_pos = self:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
-    if local_player_pos == nil then
-        self.log_obj:Record(LogLevel.Critical, "TeleportLocalPosToSafePosition: local_player_pos is nil")
-        return false
-    end
-    local_player_pos.z = local_player_pos.z + z
-    local world_safe_pos = self:GetAccurateWorldPosition(local_player_pos)
+    base_pos.z = base_pos.z + z
+    local world_safe_pos = self:GetAccurateWorldPosition(base_pos)
     if world_safe_pos == nil then
         self.log_obj:Record(LogLevel.Critical, "TeleportLocalPosToSafePosition: safe_pos is nil")
         return false
