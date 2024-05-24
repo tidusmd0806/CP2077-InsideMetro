@@ -7,8 +7,8 @@ function Metro:New()
     obj.log_obj = Log:New()
     obj.log_obj:SetLevel(LogLevel.Info, "Metro")
     -- static --
-    obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 8.5, y_min = -8.5, z_max = 2.0, z_min = -0.2}
-    obj.default_position = Vector4.new(0, -5, 1.0, 1)
+    obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 8.0, y_min = -8.0, z_max = 2.0, z_min = -0.2}
+    obj.default_position = Vector4.new(0, 0, 1.0, 1)
     obj.seat_area_radius = 1.5
     -- dynamic --
     obj.entity = nil
@@ -264,7 +264,7 @@ function Metro:Unmount()
     data.isInstant = true
     data.slotName = seat
     data.mountParentEntityId = self.entity_id
-    data.entryAnimName = "forcedTransition"
+    -- data.entryAnimName = "forcedTransition"
     data.allowFailsafeTeleport = true
 
     local slotID = NewObject('gamemountingMountingSlotId')
@@ -291,10 +291,10 @@ function Metro:Mount()
     local ent_id = self.entity_id
     local seat = "Passengers"
     local data = NewObject('handle:gameMountEventData')
-    data.isInstant = false
+    data.isInstant = true
     data.slotName = seat
     data.mountParentEntityId = ent_id
-    data.entryAnimName = "forcedTransition"
+    -- data.entryAnimName = "forcedTransition"
     data.allowFailsafeTeleport = true
 
     local slot_id = NewObject('gamemountingMountingSlotId')

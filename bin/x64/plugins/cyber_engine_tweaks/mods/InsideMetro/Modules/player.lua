@@ -36,6 +36,11 @@ function Player:PlayPose(pose_name, workspot_pos, workspot_angle)
     workspot_transform:SetPosition(workspot_pos)
     workspot_transform:SetOrientationEuler(workspot_angle)
 
+    if self.workspot_entity_id ~= nil then
+        self.log_obj:Record(LogLevel.Trace, "Delete workspot")
+        self:DeleteWorkspot()
+    end
+
     self.log_obj:Record(LogLevel.Trace, "Spawn workspot")
     self.workspot_entity_id = exEntitySpawner.Spawn(self.workspot_entity_path, workspot_transform, '')
     Cron.Every(0.01, {tick = 1}, function(timer)

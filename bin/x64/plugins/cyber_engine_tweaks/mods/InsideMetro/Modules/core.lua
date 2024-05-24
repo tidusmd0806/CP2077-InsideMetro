@@ -47,9 +47,9 @@ function Core:SetObserverAction()
 
         if action_name == "CallVehicle" and action_type == "BUTTON_PRESSED" then
             local status = self.event_obj:GetStatus()
-            if status == Def.State.SitInsideMetro and not self.event_obj:IsLockedStand() then
+            if status == Def.State.EnableStand then
                 self:EnableWalkingMetro()
-            elseif status == Def.State.StandInsideMetro then
+            elseif status == Def.State.EnableSit then
                 self:DisableWalkingMetro()
             end
         end
@@ -72,7 +72,7 @@ end
 function Core:EnableWalkingMetro()
 
     self.log_obj:Record(LogLevel.Info, "EnableWalkingMetro")
-    self:SetFreezeMode(true)
+    -- self:SetFreezeMode(true)
     local right_dir = self.metro_obj:GetWorldRight()
     local local_workspot_pos = self.metro_obj:GetPlayerSeatPosition()
     local workspot_angle = Vector4.ToRotation(right_dir)
@@ -86,13 +86,11 @@ function Core:EnableWalkingMetro()
     local world_pos = self.metro_obj:GetAccurateWorldPosition(local_workspot_pos)
     self.player_obj:PlayPose(self.stand_up_anim, world_pos, workspot_angle)
     self:KeepWorkspotSeatPostion(local_workspot_pos, workspot_angle)
-    Cron.After(0.2, function()
-        self:SetFreezeMode(false)
-        Cron.After(self.wait_time_after_standup, function()
-            self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
-            self.event_obj:SetStatus(Def.State.StandInsideMetro)
-            self.metro_obj:Unmount()
-        end)
+    -- self:SetFreezeMode(false)
+    Cron.After(self.wait_time_after_standup, function()
+        self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
+        self.metro_obj:Unmount()
+        self.event_obj:SetStatus(Def.State.WalkInsideMetro)
     end)
 
 end
@@ -109,7 +107,7 @@ function Core:DisableWalkingMetro()
                 return
             end
             self.event_obj:SetStatus(Def.State.SitInsideMetro)
-            Cron.After(0.3, function()
+            Cron.After(0.01, function()
                 local right_dir = self.metro_obj:GetWorldRight()
                 local workspot_pos = self.metro_obj:GetAccurateWorldPosition(self.metro_obj:GetPlayerSeatPosition())
                 local workspot_angle = Vector4.ToRotation(right_dir)
@@ -145,6 +143,7 @@ function Core:KeepWorkspotSeatPostion(local_pos, angle)
             Cron.Halt(timer)
             return
         end
+
         Game.GetTeleportationFacility():Teleport(workspot_entity, world_pos, angle)
         if not self.metro_obj:IsMountedPlayer() then
             self.log_obj:Record(LogLevel.Trace, "DeleteWorkspot")

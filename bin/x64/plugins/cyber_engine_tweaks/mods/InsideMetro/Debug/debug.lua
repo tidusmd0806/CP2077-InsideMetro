@@ -61,7 +61,7 @@ function Debug:SetObserver()
         --     self.result = wrapped_method(script_interface)
         --     return self.result
         -- end)
-        -- Observe("PlayerPuppet", "QueueEvent", function(this, event)
+        -- Observe("NcartMetroComponent", "OnMountingEvent", function(this, event)
         --     print(event:GetClassName().value)
         --     if event:GetClassName().value == "enteventsPhysicalCollisionEvent" then
         --         print("collision")
@@ -185,6 +185,11 @@ function Debug:ImGuiMetroSpeed()
     if self.is_im_gui_metro_speed then
         local metro_speed = self.core_obj.metro_obj:GetSpeed()
         ImGui.Text("Metro Speed : " .. metro_speed)
+        local id = self.core_obj.metro_obj.entity_id
+        if id == nil then
+            return
+        end
+        ImGui.Text("Entity ID : " .. tostring(id.hash))
     end
 end
 

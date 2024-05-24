@@ -5,8 +5,9 @@ Def.__index = Def
 Def.State = {
     OutsideMetro = 0,
     SitInsideMetro = 1,
-    StandInsideMetro = 2,
-    WalkInsideMetro = 3
+    EnableStand = 2,
+    EnableSit = 3,
+    WalkInsideMetro = 4
 }
 
 return Def
