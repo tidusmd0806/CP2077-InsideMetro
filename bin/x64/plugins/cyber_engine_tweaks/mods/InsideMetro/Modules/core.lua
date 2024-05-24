@@ -48,7 +48,6 @@ function Core:SetObserverAction()
         if action_name == "CallVehicle" and action_type == "BUTTON_PRESSED" then
             local status = self.event_obj:GetStatus()
             if status == Def.State.SitInsideMetro and not self.event_obj:IsLockedStand() then
-                self.event_obj:SetStatus(Def.State.StandInsideMetro)
                 self:EnableWalkingMetro()
             elseif status == Def.State.StandInsideMetro then
                 self:DisableWalkingMetro()
@@ -73,47 +72,27 @@ end
 function Core:EnableWalkingMetro()
 
     self.log_obj:Record(LogLevel.Info, "EnableWalkingMetro")
-    -- self:SetFreezeMode(true)
-    -- self.metro_obj:SetPlayerSeatPosition()
+    self:SetFreezeMode(true)
     local right_dir = self.metro_obj:GetWorldRight()
     local local_workspot_pos = self.metro_obj:GetPlayerSeatPosition()
     local workspot_angle = Vector4.ToRotation(right_dir)
     if self.metro_obj:IsPlayerSeatRightSide() then
-        local_workspot_pos.x = local_workspot_pos.x - right_dir.x * self.seat_forward_offset
-        local_workspot_pos.y = local_workspot_pos.y - right_dir.y * self.seat_forward_offset
-        local_workspot_pos.z = local_workspot_pos.z - right_dir.z * self.seat_forward_offset
-        -- workspot_angle.roll = 0
-        -- workspot_angle.pitch = 0
+        local_workspot_pos.x = local_workspot_pos.x - self.seat_forward_offset
         workspot_angle.yaw = workspot_angle.yaw
     else
-        local_workspot_pos.x = local_workspot_pos.x + right_dir.x * self.seat_forward_offset
-        local_workspot_pos.y = local_workspot_pos.y + right_dir.y * self.seat_forward_offset
-        local_workspot_pos.z = local_workspot_pos.z + right_dir.z * self.seat_forward_offset
-        -- workspot_angle.roll = 0
-        -- workspot_angle.pitch = 0
+        local_workspot_pos.x = local_workspot_pos.x + self.seat_forward_offset
         workspot_angle.yaw = workspot_angle.yaw + 180
     end
     local world_pos = self.metro_obj:GetAccurateWorldPosition(local_workspot_pos)
     self.player_obj:PlayPose(self.stand_up_anim, world_pos, workspot_angle)
     self:KeepWorkspotSeatPostion(local_workspot_pos, workspot_angle)
-    -- Cron.After(0.2, function()
-    --     self:SetFreezeMode(false)
-    -- end)
-    Cron.After(self.wait_time_after_standup, function()
-        self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
-        -- self:SetFreezeMode(true)
-        self.metro_obj:Unmount()
-        -- self:SetFreezeMode(false)
-        -- local world_pos_ = self.metro_obj:GetAccurateWorldPosition(local_workspot_pos)
-        -- Game.GetTeleportationFacility():Teleport(Game.GetPlayer(), world_pos_, workspot_angle)
-        -- Cron.Every(0.001, {tick = 1}, function(timer)
-        --     if self.event_obj.is_on_ground or not self.metro_obj:TeleportLocalDownPos(local_workspot_pos, -0.01) then
-        --         self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: TeleportLocalDownPos")
-        --         self:SetFreezeMode(false)
-        --         timer.Halt(timer)
-        --         return
-        --     end
-        -- end)
+    Cron.After(0.2, function()
+        self:SetFreezeMode(false)
+        Cron.After(self.wait_time_after_standup, function()
+            self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
+            self.event_obj:SetStatus(Def.State.StandInsideMetro)
+            self.metro_obj:Unmount()
+        end)
     end)
 
 end
@@ -122,39 +101,31 @@ function Core:DisableWalkingMetro()
 
     self.log_obj:Record(LogLevel.Info, "DisableWalkingMetro")
     self:SetFreezeMode(true)
-    self.metro_obj:Mount()
-    Cron.Every(0.01, {tick = 1}, function(timer)
-        if Game.GetPlayer():GetMountedVehicle() == nil then
-            self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: Player is in vehicle")
-            return
-        end
-        self.event_obj:SetStatus(Def.State.SitInsideMetro)
-        Cron.After(0.3, function()
-            local right_dir = self.metro_obj:GetWorldRight()
-            local workspot_pos = self.metro_obj:GetAccurateWorldPosition(self.metro_obj:GetPlayerSeatPosition())
-            local workspot_angle = Vector4.ToRotation(right_dir)
-            if self.metro_obj:IsPlayerSeatRightSide() then
-                workspot_pos.x = workspot_pos.x
-                workspot_pos.y = workspot_pos.y
-                workspot_pos.z = workspot_pos.z + self.sit_position_offset
-                -- workspot_angle.roll = 0
-                -- workspot_angle.pitch = 0
-                workspot_angle.yaw = workspot_angle.yaw
-            else
-                workspot_pos.x = workspot_pos.x
-                workspot_pos.y = workspot_pos.y
-                workspot_pos.z = workspot_pos.z + self.sit_position_offset
-                -- workspot_angle.roll = 0
-                -- workspot_angle.pitch = 0
-                workspot_angle.yaw = workspot_angle.yaw + 180
+    Cron.After(0.1, function()
+        self.metro_obj:Mount()
+        Cron.Every(0.01, {tick = 1}, function(timer)
+            if Game.GetPlayer():GetMountedVehicle() == nil then
+                self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: Player is in vehicle")
+                return
             end
-            self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: PlayPose")
-            self.player_obj:PlayPose(self.sit_down_anim, workspot_pos, workspot_angle)
-            Cron.After(0.5, function()
-                self:SetFreezeMode(false)
+            self.event_obj:SetStatus(Def.State.SitInsideMetro)
+            Cron.After(0.3, function()
+                local right_dir = self.metro_obj:GetWorldRight()
+                local workspot_pos = self.metro_obj:GetAccurateWorldPosition(self.metro_obj:GetPlayerSeatPosition())
+                local workspot_angle = Vector4.ToRotation(right_dir)
+                if self.metro_obj:IsPlayerSeatRightSide() then
+                    workspot_angle.yaw = workspot_angle.yaw
+                else
+                    workspot_angle.yaw = workspot_angle.yaw + 180
+                end
+                self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: PlayPose")
+                self.player_obj:PlayPose(self.sit_down_anim, workspot_pos, workspot_angle)
+                Cron.After(0.5, function()
+                    self:SetFreezeMode(false)
+                end)
             end)
+            Cron.Halt(timer)
         end)
-        Cron.Halt(timer)
     end)
 
 end
@@ -168,24 +139,6 @@ function Core:KeepWorkspotSeatPostion(local_pos, angle)
             return
         end
         timer.tick = timer.tick + 1
-        -- local right_dir = self.metro_obj:GetWorldRight()
-        -- local pos = self.metro_obj:GetAccurateWorldPosition(self.metro_obj:GetPlayerSeatPosition())
-        -- local angle = Vector4.ToRotation(right_dir)
-        -- if self.metro_obj:IsPlayerSeatRightSide() then
-        --     pos.x = pos.x - right_dir.x * self.seat_forward_offset
-        --     pos.y = pos.y - right_dir.y * self.seat_forward_offset
-        --     pos.z = pos.z - right_dir.z * self.seat_forward_offset
-        --     -- angle.roll = 0
-        --     -- angle.pitch = 0
-        --     angle.yaw = angle.yaw
-        -- else
-        --     pos.x = pos.x + right_dir.x * self.seat_forward_offset
-        --     pos.y = pos.y + right_dir.y * self.seat_forward_offset
-        --     pos.z = pos.z + right_dir.z * self.seat_forward_offset
-        --     -- angle.roll = 0
-        --     -- angle.pitch = 0
-        --     angle.yaw = angle.yaw + 180
-        -- end
         local world_pos = self.metro_obj:GetAccurateWorldPosition(local_pos)
         if world_pos == nil or angle == nil then
             self.log_obj:Record(LogLevel.Error, "KeepWorkspotSeatPostion: pos or angle is nil")

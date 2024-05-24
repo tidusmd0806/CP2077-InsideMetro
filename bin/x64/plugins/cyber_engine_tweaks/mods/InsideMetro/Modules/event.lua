@@ -19,7 +19,6 @@ function Event:New(player_obj, metro_obj)
     obj.is_on_ground = false
     obj.is_touching_ground = false
     obj.is_sitting = false
-    obj.invalid_pos_count = 0
     return setmetatable(obj, self)
 end
 
@@ -99,6 +98,10 @@ end
 
 function Event:IsLockedStand()
     return self.is_locked_stand
+end
+
+function Event:IsOnGround()
+    return self.is_on_ground
 end
 
 function Event:GetStatus()
@@ -194,12 +197,6 @@ function Event:CheckInvalidPosition()
     if not self.metro_obj:IsInMetro(player_local_pos) then
         self.log_obj:Record(LogLevel.Warning, "Player is not in Metro")
         self.metro_obj:TeleportToSafePosition()
-        -- Cron.Every(0.001, {tick = 1}, function(timer)
-        --     if self.is_on_ground or not self.metro_obj:TeleportLocalDownPos(-0.1) then
-        --         timer.Halt(timer)
-        --         return
-        --     end
-        -- end)
     end
 
 end
@@ -242,29 +239,15 @@ function Event:CheckTouchGround()
             end
         end
     end
-    -- if self.is_touching_ground then
-        -- local_player_pos.z = local_player_pos.z - 0.03
-        -- local pos = self.metro_obj:GetAccurateWorldPosition(local_player_pos)
-        -- local angle = player:GetWorldOrientation():ToEulerAngles()
-        -- Game.GetTeleportationFacility():Teleport(player, pos, angle)
-    --     return
-    -- end
     if self.is_on_ground then
         self.prev_player_local_pos = local_player_pos
         return
     end
-    -- self.is_touching_ground = true
-    -- Cron.Every(0.001, {tick = 1}, function(timer)
     self.log_obj:Record(LogLevel.Trace, "Is not touching ground")
-    self.prev_player_local_pos.z = self.prev_player_local_pos.z - 0.1
-    local pos = self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos)
+    local prev_pos = Vector4.new(self.prev_player_local_pos.x, self.prev_player_local_pos.y, local_player_pos.z - 0.05, 1)
+    local pos = self.metro_obj:GetAccurateWorldPosition(prev_pos)
     local angle = player:GetWorldOrientation():ToEulerAngles()
     Game.GetTeleportationFacility():Teleport(player, pos, angle)
-        -- if self.is_on_ground or not self.metro_obj:IsInMetro(self.prev_player_local_pos) then
-        --     self.is_touching_ground = false
-        --     Cron.Halt(timer)
-        -- end
-    -- end)
 
 end
 
