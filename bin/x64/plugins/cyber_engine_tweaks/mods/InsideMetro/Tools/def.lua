@@ -10,4 +10,9 @@ Def.State = {
     WalkInsideMetro = 4
 }
 
+Def.ChoiceVariation = {
+    Stand = 0,
+    Sit = 1
+}
+
 return Def

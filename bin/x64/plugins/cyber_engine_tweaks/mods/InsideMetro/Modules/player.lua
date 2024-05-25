@@ -14,7 +14,6 @@ function Player:New()
     obj.workspot_entity = nil
     obj.workspot_entity_id = nil
     obj.world_position = nil
-    obj.current_speed = 0
     return setmetatable(obj, self)
 end
 

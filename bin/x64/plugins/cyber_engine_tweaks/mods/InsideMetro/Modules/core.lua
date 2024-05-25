@@ -18,10 +18,22 @@ function Core:New()
     obj.despawn_count_after_standup = 250
     obj.wait_time_after_standup = 3.5
     obj.wait_time_after_sitdown = 0.01
-    obj.seat_forward_offset = 0.8
-    obj.sit_position_offset = 0
     obj.stand_up_anim = "sit_chair_lean0__2h_elbow_on_knees__01__to__stand__2h_on_sides__01__turn0__q005_01__01"
     obj.sit_down_anim = "sit_chair_lean180__2h_on_lap__01"
+    obj.ristricted_station_area = {
+        -- C Line
+        {x = -1322, y = -62, z = -3, r = 50}, -- Memorial Park
+        {x = -1114, y = -324, z = -15, r = 50}, -- Congress & MLK
+        -- {x = -1478, y = -1893, z = 71, r = 150}, -- Pacifica Stadium
+        -- D Line
+        -- {x = -1238, y = 19, z = 63, r = 50}, -- Memorial Park
+    }
+    obj.terminus = {
+        -- CD Line
+        {x = -1478, y = -1893, z = 71, r = 50}, -- Pacifica Stadium
+        -- D Line
+        {x = -1238, y = 19, z = 63, r = 50}, -- Memorial Park
+    }
     return setmetatable(obj, self)
 end
 
@@ -45,14 +57,23 @@ function Core:SetObserverAction()
 
         self.log_obj:Record(LogLevel.Debug, "Action Name: " .. action_name .. " Type: " .. action_type .. " Value: " .. action_value)
 
-        if action_name == "CallVehicle" and action_type == "BUTTON_PRESSED" then
-            local status = self.event_obj:GetStatus()
-            if status == Def.State.EnableStand then
+        local status = self.event_obj:GetStatus()
+        if status == Def.State.EnableStand and not self:IsInRestrictedArea() then
+            if (action_name == "UETChangePose" and action_type == "BUTTON_PRESSED") or (action_name == "UETWindow" and action_type == "BUTTON_PRESSED") or (action_name == "UETExit" and action_type == "BUTTON_PRESSED") then
+                consumer:Consume()
+            end
+            if action_name == "ChoiceApply" and action_type == "BUTTON_PRESSED" then
                 self:EnableWalkingMetro()
-            elseif status == Def.State.EnableSit then
+            end
+        elseif status == Def.State.EnableSit then
+            if (action_name == "UETChangePose" and action_type == "BUTTON_PRESSED") or (action_name == "UETWindow" and action_type == "BUTTON_PRESSED") or (action_name == "UETExit" and action_type == "BUTTON_PRESSED") then
+                consumer:Consume()
+            end
+            if action_name == "ChoiceApply" and action_type == "BUTTON_PRESSED" then
                 self:DisableWalkingMetro()
             end
         end
+
     end)
 
 end
@@ -62,7 +83,7 @@ function Core:SetFreezeMode(is_freeze)
         Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.0)
         TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", true, true)
         TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), true)
-    else
+    else    
         Game.GetTimeSystem():UnsetTimeDilation(CName.new("pause"), "None")
         TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", false, true)
         TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), false)
@@ -72,21 +93,17 @@ end
 function Core:EnableWalkingMetro()
 
     self.log_obj:Record(LogLevel.Info, "EnableWalkingMetro")
-    -- self:SetFreezeMode(true)
     local right_dir = self.metro_obj:GetWorldRight()
     local local_workspot_pos = self.metro_obj:GetPlayerSeatPosition()
     local workspot_angle = Vector4.ToRotation(right_dir)
     if self.metro_obj:IsPlayerSeatRightSide() then
-        local_workspot_pos.x = local_workspot_pos.x - self.seat_forward_offset
         workspot_angle.yaw = workspot_angle.yaw
     else
-        local_workspot_pos.x = local_workspot_pos.x + self.seat_forward_offset
         workspot_angle.yaw = workspot_angle.yaw + 180
     end
     local world_pos = self.metro_obj:GetAccurateWorldPosition(local_workspot_pos)
     self.player_obj:PlayPose(self.stand_up_anim, world_pos, workspot_angle)
     self:KeepWorkspotSeatPostion(local_workspot_pos, workspot_angle)
-    -- self:SetFreezeMode(false)
     Cron.After(self.wait_time_after_standup, function()
         self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
         self.metro_obj:Unmount()
@@ -107,21 +124,21 @@ function Core:DisableWalkingMetro()
                 return
             end
             self.event_obj:SetStatus(Def.State.SitInsideMetro)
-            Cron.After(0.01, function()
-                local right_dir = self.metro_obj:GetWorldRight()
-                local workspot_pos = self.metro_obj:GetAccurateWorldPosition(self.metro_obj:GetPlayerSeatPosition())
-                local workspot_angle = Vector4.ToRotation(right_dir)
-                if self.metro_obj:IsPlayerSeatRightSide() then
-                    workspot_angle.yaw = workspot_angle.yaw
-                else
-                    workspot_angle.yaw = workspot_angle.yaw + 180
-                end
-                self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: PlayPose")
-                self.player_obj:PlayPose(self.sit_down_anim, workspot_pos, workspot_angle)
-                Cron.After(0.5, function()
-                    self:SetFreezeMode(false)
-                end)
+
+            local right_dir = self.metro_obj:GetWorldRight()
+            local workspot_pos = self.metro_obj:GetAccurateWorldPosition(self.metro_obj:GetPlayerSeatPosition())
+            local workspot_angle = Vector4.ToRotation(right_dir)
+            if self.metro_obj:IsPlayerSeatRightSide() then
+                workspot_angle.yaw = workspot_angle.yaw
+            else
+                workspot_angle.yaw = workspot_angle.yaw + 180
+            end
+            self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: PlayPose")
+            self.player_obj:PlayPose(self.sit_down_anim, workspot_pos, workspot_angle)
+            Cron.After(0.5, function()
+                self:SetFreezeMode(false)
             end)
+
             Cron.Halt(timer)
         end)
     end)
@@ -152,6 +169,32 @@ function Core:KeepWorkspotSeatPostion(local_pos, angle)
             return
         end
     end)
+
+end
+
+function Core:IsInRestrictedArea()
+
+    local player_pos = Game.GetPlayer():GetWorldPosition()
+    for _, area in ipairs(self.ristricted_station_area) do
+        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
+        if distance < area.r then
+            return true
+        end
+    end
+    return false
+
+end
+
+function Core:IsInTerminus()
+
+    local player_pos = Game.GetPlayer():GetWorldPosition()
+    for _, area in ipairs(self.terminus) do
+        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
+        if distance < area.r then
+            return true
+        end
+    end
+    return false
 
 end
 

@@ -7,8 +7,8 @@ function Metro:New()
     obj.log_obj = Log:New()
     obj.log_obj:SetLevel(LogLevel.Info, "Metro")
     -- static --
-    obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 8.0, y_min = -8.0, z_max = 2.0, z_min = -0.2}
-    obj.default_position = Vector4.new(0, 0, 1.0, 1)
+    obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 8.0, y_min = -8.0, z_max = 1.6, z_min = -0.2}
+    obj.default_position = Vector4.new(0, 0, 0.8, 1)
     obj.seat_area_radius = 1.5
     -- dynamic --
     obj.entity = nil
@@ -31,6 +31,12 @@ end
 function Metro:Uninitialize()
     self.entity = nil
     self.entity_id = nil
+    self.is_mounted_player = true
+    self.player_seat_position = nil
+    self.is_player_seat_right_side = true
+    self.measurement_npc_position = nil
+    self.world_npc_position = nil
+    self.current_speed = 0
 end
 
 function Metro:SetEntity()
@@ -264,7 +270,6 @@ function Metro:Unmount()
     data.isInstant = true
     data.slotName = seat
     data.mountParentEntityId = self.entity_id
-    -- data.entryAnimName = "forcedTransition"
     data.allowFailsafeTeleport = true
 
     local slotID = NewObject('gamemountingMountingSlotId')
@@ -294,7 +299,6 @@ function Metro:Mount()
     data.isInstant = true
     data.slotName = seat
     data.mountParentEntityId = ent_id
-    -- data.entryAnimName = "forcedTransition"
     data.allowFailsafeTeleport = true
 
     local slot_id = NewObject('gamemountingMountingSlotId')
@@ -325,21 +329,6 @@ function Metro:TeleportToSafePosition()
     local player = Game.GetPlayer()
     local angle = Vector4.ToRotation(self:GetWorldForward())
     Game.GetTeleportationFacility():Teleport(player, world_safe_pos, angle)
-
-end
-
-function Metro:TeleportLocalDownPos(base_pos, z)
-
-    base_pos.z = base_pos.z + z
-    local world_safe_pos = self:GetAccurateWorldPosition(base_pos)
-    if world_safe_pos == nil then
-        self.log_obj:Record(LogLevel.Critical, "TeleportLocalPosToSafePosition: safe_pos is nil")
-        return false
-    end
-    local player = Game.GetPlayer()
-    local angle = Vector4.ToRotation(self:GetWorldForward())
-    Game.GetTeleportationFacility():Teleport(player, world_safe_pos, angle)
-    return true
 
 end
 
