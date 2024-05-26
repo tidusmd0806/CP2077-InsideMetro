@@ -29,13 +29,14 @@ function Core:New()
         {x = 168, y = -1172, z = 40, r = 50, name = "MEGABUILDING_H7"},
         -- {x = -121, y = 130, z = 52, r = 50, name = "CHARTER_HILL"},
         -- {x = -445, y = 212, z = 52, r = 50, name = "E_LINE_FINAL_POINT"},
-        {x = -1478, y = -1893, z = 71, r = 50, name = "PACIFICA_STADIUM"},
+        {x = -1478, y = -1893, z = 71, r = 150, name = "PACIFICA_STADIUM"},
+        {x = -1115, y = -322, z = -15, r = 50, name = "CONGRESS_AND_MLK"},
         {x = -1322, y = -62, z = -3, r = 50, name = "MEMORIAL_PARK"},
         {x = -1355, y = 1740, z = 45, r = 50, name = "MEDCENTER"},
         {x = -1598, y = 1484, z = 48, r = 50, name = "FARRIER_AND_FERGUSON"},
         {x = -2085, y = 835, z = 69, r = 50, name = "WEST_BRIDGE"},
-        {x = -741, y = -596, z = 37, r = 50, name = "C_LINE_RAINBOW_1"},
-        {x = -1044, y = -376, z = 3, r = 50, name = "C_LINE_RAINBOW_2"},
+        -- {x = -741, y = -596, z = 37, r = 50, name = "C_LINE_RAINBOW_1"},
+        -- {x = -1044, y = -376, z = 3, r = 50, name = "C_LINE_RAINBOW_2"},
     }
     -- dynamic --
     obj.move_forward = false
@@ -156,7 +157,25 @@ function Core:SetFreezeMode(is_freeze)
     end
 end
 
+function Core:IsLineC()
+    local player_pos = Game.GetPlayer():GetWorldPosition()
+    for _, area in ipairs(self.ristricted_station_area) do
+        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
+        if distance < area.r then
+            if area.name == "CONGRESS_AND_MLK" or area.name == "MEMORIAL_PARK" then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 function Core:EnableWalkingMetro()
+
+    if self.is_switching_pose then
+        return
+    end
+    self.is_switching_pose = true
 
     self.log_obj:Record(LogLevel.Info, "EnableWalkingMetro")
     local right_dir = self.metro_obj:GetWorldRight()
@@ -174,11 +193,17 @@ function Core:EnableWalkingMetro()
         self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
         self.metro_obj:Unmount()
         self.event_obj:SetStatus(Def.State.WalkInsideMetro)
+        self.is_switching_pose = false
     end)
 
 end
 
 function Core:DisableWalkingMetro()
+
+    if self.is_switching_pose then
+        return
+    end
+    self.is_switching_pose = true
 
     self.log_obj:Record(LogLevel.Info, "DisableWalkingMetro")
     self:SetFreezeMode(true)
@@ -203,6 +228,7 @@ function Core:DisableWalkingMetro()
             self.player_obj:PlayPose(self.sit_down_anim, workspot_pos, workspot_angle)
             Cron.After(0.5, function()
                 self:SetFreezeMode(false)
+                self.is_switching_pose = false
             end)
 
             Cron.Halt(timer)
@@ -250,6 +276,19 @@ function Core:IsInRestrictedArea()
     return false
 
 end
+
+-- function Core:IsNeededStandStation()
+--     local player_pos = Game.GetPlayer():GetWorldPosition()
+--     for _, area in ipairs(self.ristricted_station_area) do
+--         local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
+--         if distance < area.r then
+--             if area.name == "PACIFICA_STADIUM" then
+--                 return true
+--             end
+--         end
+--     end
+--     return false
+-- end
 
 function Core:UpdateInMetro(delta)
 

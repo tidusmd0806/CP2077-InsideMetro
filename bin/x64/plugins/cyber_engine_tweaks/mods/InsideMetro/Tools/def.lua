@@ -3,6 +3,7 @@ Def = {}
 Def.__index = Def
 
 Def.State = {
+    Invalid = -1,
     OutsideMetro = 0,
     SitInsideMetro = 1,
     EnableStand = 2,

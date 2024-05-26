@@ -18,7 +18,7 @@ function Event:New(player_obj, metro_obj)
     obj.current_status = Def.State.OutsideMetro
     obj.prev_player_local_pos = metro_obj.default_position
     obj.is_on_ground = false
-    obj.is_sitting = false
+    obj.is_initial = false
     obj.invisible_collision_count = 0
     obj.is_ready = false
     obj.is_invisible_collision = false
@@ -37,7 +37,7 @@ function Event:Uninitialize()
 
     self.prev_player_local_pos = self.metro_obj.default_position
     self.is_on_ground = false
-    self.is_sitting = false
+    self.is_initial = false
     self.is_ready = false
     self.is_invisible_collision = false
     self.player_obj:DeleteWorkspot()
@@ -121,6 +121,11 @@ function Event:SetStatus(status)
     if self.current_status == Def.State.OutsideMetro and status == Def.State.SitInsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status from OutsideMetro to SitInsideMetro")
         self.metro_obj:SetPlayerSeatPosition()
+        if InsideMetro.core_obj:IsLineC() then
+            self.log_obj:Record(LogLevel.Info, "Line C Detected")
+            self.current_status = Def.State.Invalid
+            return false
+        end
         self.current_status = Def.State.SitInsideMetro
         return true
     elseif self.current_status == Def.State.SitInsideMetro and status == Def.State.EnableStand then
@@ -179,6 +184,18 @@ function Event:SetStatus(status)
         self.hud_obj:HideChoice()
         self:Uninitialize()
         return true
+    elseif self.current_status == Def.State.EnableSit and status == Def.State.OutsideMetro then
+        self.log_obj:Record(LogLevel.Info, "Change Status from EnableSit to OutsideMetro")
+        self.current_status = Def.State.OutsideMetro
+        self.hud_obj:HideChoice()
+        self:Uninitialize()
+        return true
+    elseif self.current_status == Def.State.WalkInsideMetro and status == Def.State.OutsideMetro then
+        self.log_obj:Record(LogLevel.Info, "Change Status from WalkInsideMetro to OutsideMetro")
+        self.current_status = Def.State.OutsideMetro
+        self.hud_obj:HideChoice()
+        self:Uninitialize()
+        return true
     else
         return false
     end
@@ -227,6 +244,7 @@ function Event:CheckAllEvents()
         self:CheckOutsideMetro()
     elseif self.current_status == Def.State.EnableStand then
         self:CheckEnableStand()
+        -- self:CheckStandStation()
     elseif self.current_status == Def.State.EnableSit then
         self:CheckEnableSit()
         self:CheckInvalidPosition()
@@ -237,14 +255,29 @@ function Event:CheckAllEvents()
         self:CheckInvalidPosition()
         self:CheckTouchGround()
         self:CheckRestrictedArea()
+    elseif self.current_status == Def.State.Invalid then
+        self:CheckGetOff()
+    end
+
+end
+
+function Event:CheckGetOff()
+
+    if not self.metro_obj:IsMountedPlayer() then
+        self.log_obj:Record(LogLevel.Info, "Detect Get Off Metro")
+        self.current_status = Def.State.OutsideMetro
+        self.hud_obj:HideChoice()
+        self:Uninitialize()
+        self.metro_obj:Uninitialize()
+        return
     end
 
 end
 
 function Event:CheckInsideMetro()
 
-    if self.metro_obj:IsMountedPlayer() and not self.is_sitting then
-        self.is_sitting = true
+    if self.metro_obj:IsMountedPlayer() and not self.is_initial then
+        self.is_initial = true
         Cron.Every(0.1, {tick = 1}, function(timer)
             timer.tick = timer.tick + 1
             -- For a moment, the workspace is unlocked.
@@ -297,6 +330,15 @@ function Event:CheckEnableStand()
     end
 
 end
+
+-- function Event:CheckStandStation()
+
+--     if InsideMetro.core_obj:IsNeededStandStation() then
+--         self.log_obj:Record(LogLevel.Debug, "Player is in Stand Station")
+--         InsideMetro.core_obj:EnableWalkingMetro()
+--     end
+
+-- end
 
 function Event:CheckEnableSit()
 
