@@ -19,6 +19,7 @@ function Metro:New()
     obj.measurement_npc_position = nil
     obj.world_npc_position = nil
     obj.current_speed = 0
+    obj.measurement_npc_diff_yaw = 0
     return setmetatable(obj, self)
 end
 
@@ -37,6 +38,7 @@ function Metro:Uninitialize()
     self.measurement_npc_position = nil
     self.world_npc_position = nil
     self.current_speed = 0
+    self.measurement_npc_diff_yaw = 0
 end
 
 function Metro:SetEntity()
@@ -168,7 +170,7 @@ function Metro:SetNPCForMeasurement()
     end
     self.measurement_npc_position = self:ChangeWorldPosToLocal(npcs[min_index]:GetWorldPosition())
     self.measurement_npc_entity = npcs[min_index]
-
+    self.measurement_npc_diff_yaw = Vector4.GetAngleBetween(self.measurement_npc_entity:GetWorldForward(), self:GetWorldForward())
 end
 
 function Metro:GetNPCWorldPosition()

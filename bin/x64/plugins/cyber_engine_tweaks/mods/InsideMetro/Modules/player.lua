@@ -13,7 +13,7 @@ function Player:New()
     obj.is_ready = false
     obj.workspot_entity = nil
     obj.workspot_entity_id = nil
-    obj.world_position = nil
+    obj.local_position = Vector4.new(0, 0, 0.5, 1)
     return setmetatable(obj, self)
 end
 
@@ -54,6 +54,14 @@ function Player:PlayPose(pose_name, workspot_pos, workspot_angle)
         end
     end)
 
+end
+
+function Player:GetLocalPosition()
+    return self.local_position
+end
+
+function Player:SetLocalPosition(local_position)
+    self.local_position = local_position
 end
 
 return Player

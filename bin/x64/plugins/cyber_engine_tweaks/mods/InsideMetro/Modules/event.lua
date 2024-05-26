@@ -21,6 +21,7 @@ function Event:New(player_obj, metro_obj)
     obj.is_sitting = false
     obj.invisible_collision_count = 0
     obj.is_ready = false
+    obj.is_invisible_collision = false
     return setmetatable(obj, self)
 end
 
@@ -169,6 +170,16 @@ end
 
 function Event:IsInMetro()
     return self.current_status ~= Def.State.OutsideMetro
+end
+
+function Event:IsInWalking()
+
+    if self.current_status >= Def.State.EnableSit then
+        return true
+    else
+        return false
+    end
+
 end
 
 function Event:IsOnGround()
@@ -341,35 +352,39 @@ function Event:CheckTouchGround()
     if not self.metro_obj:IsInMetro(local_player_pos) then
         return
     end
-    if self.invisible_collision_count == self.invisible_collision_count_max then
-        self.invisible_collision_count = self.invisible_collision_count + 1
-        self.log_obj:Record(LogLevel.Info, "Invisible Collision Count Exceeds")
-        InsideMetro.core_obj:DisableWalkingMetro()
-        return
-    elseif self.invisible_collision_count > self.invisible_collision_count_max then
-        return
-    end
+    -- if self.invisible_collision_count == self.invisible_collision_count_max then
+    --     self.invisible_collision_count = self.invisible_collision_count + 1
+    --     self.log_obj:Record(LogLevel.Info, "Invisible Collision Count Exceeds")
+    --     InsideMetro.core_obj:DisableWalkingMetro()
+    --     return
+    -- elseif self.invisible_collision_count > self.invisible_collision_count_max then
+    --     return
+    -- end
+    print(self.is_invisible_collision)
     local metro_forward = self.metro_obj:GetWorldForward()
     local metro_forward_2d = Vector4.Normalize(Vector4.new(metro_forward.x, metro_forward.y, 0, 1))
-    local search_pos_1 = Vector4.new(player_pos.x + metro_forward_2d.x, player_pos.y + metro_forward_2d.y, player_pos.z - 1.5, 1)
-    local search_pos_2 = Vector4.new(player_pos.x + metro_forward_2d.x, player_pos.y + metro_forward_2d.y, player_pos.z, 1)
-    local search_pos_3 = Vector4.new(player_pos.x - metro_forward_2d.x, player_pos.y - metro_forward_2d.y, player_pos.z - 1.5, 1)
-    local search_pos_4 = Vector4.new(player_pos.x - metro_forward_2d.x, player_pos.y - metro_forward_2d.y, player_pos.z, 1)
-    local search_list = {search_pos_1, search_pos_2, search_pos_3, search_pos_4}
-    for _, search_pos in ipairs(search_list) do
-        local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, search_pos, "Static", false, false)
+    local base_point = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0, 0, 0, 1))
+    local search_pos_1 = Vector4.new(base_point.x - metro_forward_2d.x * 8, base_point.y - metro_forward_2d.y * 8, base_point.z, 1)
+    local search_pos_2 = Vector4.new(base_point.x + metro_forward_2d.x * 8, base_point.y + metro_forward_2d.y * 8, base_point.z, 1)
+    -- local search_pos_3 = Vector4.new(player_pos.x - metro_forward_2d.x, player_pos.y - metro_forward_2d.y, player_pos.z - 1.5, 1)
+    -- local search_pos_4 = Vector4.new(player_pos.x - metro_forward_2d.x, player_pos.y - metro_forward_2d.y, player_pos.z, 1)
+    -- local search_list = {search_pos_1, search_pos_2, search_pos_3, search_pos_4}
+    -- for _, search_pos in ipairs(search_list) do
+        local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(search_pos_1, search_pos_2, "Static", false, false)
         if res then
             if trace.material.value == "concrete.physmat" and not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
                 self.log_obj:Record(LogLevel.Trace, "Touch Concrete")
+                self.is_invisible_collision = true
                 local pos = self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos)
                 local angle = player:GetWorldOrientation():ToEulerAngles()
                 Game.GetTeleportationFacility():Teleport(player, pos, angle)
-                self.invisible_collision_count = self.invisible_collision_count + 1
+                -- self.invisible_collision_count = self.invisible_collision_count + 1
                 return
             end
         end
-    end
-    self.invisible_collision_count = 0
+    -- end
+    -- self.invisible_collision_count = 0
+    self.is_invisible_collision = false
     if self.is_on_ground then
         self.prev_player_local_pos = local_player_pos
         return

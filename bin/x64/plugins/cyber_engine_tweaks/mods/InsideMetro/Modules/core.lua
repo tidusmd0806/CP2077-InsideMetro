@@ -34,6 +34,12 @@ function Core:New()
         -- D Line
         {x = -1238, y = 19, z = 63, r = 50}, -- Memorial Park
     }
+    -- dynamic --
+    obj.move_forward = false
+    obj.move_backward = false
+    obj.move_right = false
+    obj.move_left = false
+    obj.move_yaw = 0
     return setmetatable(obj, self)
 end
 
@@ -74,6 +80,63 @@ function Core:SetObserverAction()
             end
         end
 
+        -- 
+        if action_name == 'Forward' then
+            if action_type == 'BUTTON_PRESSED' then
+                self.move_forward = true
+            elseif action_type == 'BUTTON_RELEASED' then
+                self.move_forward = false
+            end
+        elseif action_name == 'Back' then
+            if action_type == 'BUTTON_PRESSED' then
+                self.move_backward = true
+            elseif action_type == 'BUTTON_RELEASED' then
+                self.move_backward = false
+            end
+        elseif action_name == 'Right' then
+            if action_type == 'BUTTON_PRESSED' then
+                self.move_right = true
+            elseif action_type == 'BUTTON_RELEASED' then
+                self.move_right = false
+            end
+        elseif action_name == 'Left' then
+            if action_type == 'BUTTON_PRESSED' then
+                self.move_left = true
+            elseif action_type == 'BUTTON_RELEASED' then
+                self.move_left = false
+            end
+        elseif action_name == "MoveX" then
+            if action_value < 0 then
+                self.move_right = false
+                self.move_left = true
+            else
+                self.move_right = true
+                self.move_left = false
+            end
+            if action_value == 0 then
+                self.move_right = false
+                self.move_left = false
+            end
+        elseif action_name == "MoveY" then
+            if action_value < 0 then
+                self.move_forward = false
+                self.move_backward = true
+            else
+                self.move_forward = true
+                self.move_backward = false
+            end
+            if action_value == 0 then
+                self.move_forward = false
+                self.move_backward = false
+            end
+        elseif action_name == "CameraMouseX" then
+            local sens = Game.GetSettingsSystem():GetVar("/controls/fppcameramouse", "FPP_MouseX"):GetValue() / 2.9
+            self.move_yaw = - (action_value / 35) * sens
+        elseif action_name == "right_stick_x" then
+            local x = action:GetValue(action)
+            local sens = Game.GetSettingsSystem():GetVar("/controls/fppcamerapad", "FPP_PadX"):GetValue() / 10
+            self.move_yaw = - x * 1.7 * sens
+        end
     end)
 
 end
@@ -83,7 +146,7 @@ function Core:SetFreezeMode(is_freeze)
         Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.0)
         TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", true, true)
         TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), true)
-    else    
+    else
         Game.GetTimeSystem():UnsetTimeDilation(CName.new("pause"), "None")
         TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", false, true)
         TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), false)
@@ -196,6 +259,42 @@ function Core:IsInTerminus()
     end
     return false
 
+end
+
+function Core:UpdateInMetro(delta)
+
+    local player = Game.GetPlayer()
+    local world_player_pos = self.metro_obj:GetAccurateWorldPosition(self.event_obj.prev_player_local_pos)
+    -- local world_player_pos = player:GetWorldPosition()
+    local move_speed = 2
+    local forward_dir = player:GetWorldForward()
+    local right_dir = player:GetWorldRight()
+    local x,y = world_player_pos.x, world_player_pos.y
+    if self.move_forward then
+        x = x + forward_dir.x * move_speed * delta
+        y = y + forward_dir.y * move_speed * delta
+    end
+    if self.move_backward then
+        x = x - forward_dir.x * move_speed * delta
+        y = y - forward_dir.y * move_speed * delta
+    end
+    if self.move_right then
+        x = x + right_dir.x * move_speed * delta
+        y = y + right_dir.y * move_speed * delta
+    end
+    if self.move_left then
+        x = x - right_dir.x * move_speed * delta
+        y = y - right_dir.y * move_speed * delta
+    end
+    local new_pos = Vector4.new(x, y, world_player_pos.z, 1)
+    local local_player_pos = self.metro_obj:GetAccurateLocalPosition(new_pos)
+    if self.metro_obj:IsInMetro(local_player_pos) then
+        self.event_obj.prev_player_local_pos = local_player_pos
+    else
+        new_pos = world_player_pos
+    end
+    local angle = self.metro_obj.measurement_npc_entity:GetWorldOrientation():ToEulerAngles()
+    Game.GetTeleportationFacility():Teleport(player, new_pos, EulerAngles.new(angle.roll, angle.pitch, GetPlayer():GetWorldYaw() + self.move_yaw))
 end
 
 return Core
