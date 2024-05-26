@@ -13,7 +13,7 @@ function Event:New(player_obj, metro_obj)
     obj.metro_obj = metro_obj
     -- static --
     obj.stand_rock_time = 3
-    obj.invisible_collision_count_max = 50
+    obj.invisible_collision_count_max = 10
     -- dynamic --
     obj.current_status = Def.State.OutsideMetro
     obj.prev_player_local_pos = metro_obj.default_position
@@ -172,16 +172,6 @@ function Event:IsInMetro()
     return self.current_status ~= Def.State.OutsideMetro
 end
 
-function Event:IsInWalking()
-
-    if self.current_status >= Def.State.EnableSit then
-        return true
-    else
-        return false
-    end
-
-end
-
 function Event:IsOnGround()
     return self.is_on_ground
 end
@@ -221,17 +211,18 @@ function Event:CheckAllEvents()
         self:CheckOutsideMetro()
     elseif self.current_status == Def.State.EnableStand then
         self:CheckEnableStand()
-        self:CheckTerminus()
     elseif self.current_status == Def.State.EnableSit then
         self:CheckEnableSit()
         self:CheckInvalidPosition()
         self:CheckTouchGround()
         self:CheckRestrictedArea()
+        self:CheckTerminus()
     elseif self.current_status == Def.State.WalkInsideMetro then
         self:CheckEnableSit()
         self:CheckInvalidPosition()
         self:CheckTouchGround()
         self:CheckRestrictedArea()
+        self:CheckTerminus()
     end
 
 end
@@ -295,11 +286,6 @@ end
 
 function Event:CheckEnableSit()
 
-    if self.metro_entity == nil then
-        self:SetStatus(Def.State.OutsideMetro)
-        return
-    end
-
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
     if self.metro_obj:IsInSeatArea(player_local_pos) and self.metro_obj:GetSpeed() >= 0.001 then
         self.log_obj:Record(LogLevel.Debug, "Player is in Seat Area")
@@ -312,11 +298,6 @@ function Event:CheckEnableSit()
 end
 
 function Event:CheckInvalidPosition()
-
-    if self.metro_entity == nil then
-        self:SetStatus(Def.State.OutsideMetro)
-        return
-    end
 
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
     if not self.metro_obj:IsInMetro(player_local_pos) then
@@ -339,7 +320,9 @@ function Event:CheckTerminus()
 
     if InsideMetro.core_obj:IsInTerminus() then
         self.log_obj:Record(LogLevel.Info, "Detect Terminus")
-        InsideMetro.core_obj:EnableWalkingMetro()
+        if self.current_status == Def.State.EnableSit then
+            InsideMetro.core_obj:DisableWalkingMetro()
+        end
     end
 
 end
@@ -355,36 +338,50 @@ function Event:CheckTouchGround()
     -- if self.invisible_collision_count == self.invisible_collision_count_max then
     --     self.invisible_collision_count = self.invisible_collision_count + 1
     --     self.log_obj:Record(LogLevel.Info, "Invisible Collision Count Exceeds")
-    --     InsideMetro.core_obj:DisableWalkingMetro()
+    --     InsideMetro.is_free_move = true
+    --     Cron.After(5, function()
+    --         InsideMetro.is_free_move = false
+    --         self.invisible_collision_count = 0
+    --     end)
     --     return
     -- elseif self.invisible_collision_count > self.invisible_collision_count_max then
     --     return
     -- end
-    print(self.is_invisible_collision)
     local metro_forward = self.metro_obj:GetWorldForward()
     local metro_forward_2d = Vector4.Normalize(Vector4.new(metro_forward.x, metro_forward.y, 0, 1))
-    local base_point = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0, 0, 0, 1))
-    local search_pos_1 = Vector4.new(base_point.x - metro_forward_2d.x * 8, base_point.y - metro_forward_2d.y * 8, base_point.z, 1)
-    local search_pos_2 = Vector4.new(base_point.x + metro_forward_2d.x * 8, base_point.y + metro_forward_2d.y * 8, base_point.z, 1)
+    local search_pos_1 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,8,0,1))
+    local search_pos_2 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,-8,0,1))
+    local search_pos_3 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,8,2,1))
+    -- local search_pos_1 = Vector4.new(player_pos.x + metro_forward_2d.x, player_pos.y + metro_forward_2d.y, player_pos.z - 0.5, 1)
+    -- local search_pos_2 = Vector4.new(player_pos.x + metro_forward_2d.x, player_pos.y + metro_forward_2d.y, player_pos.z, 1)
     -- local search_pos_3 = Vector4.new(player_pos.x - metro_forward_2d.x, player_pos.y - metro_forward_2d.y, player_pos.z - 1.5, 1)
     -- local search_pos_4 = Vector4.new(player_pos.x - metro_forward_2d.x, player_pos.y - metro_forward_2d.y, player_pos.z, 1)
-    -- local search_list = {search_pos_1, search_pos_2, search_pos_3, search_pos_4}
+    -- local search_list = {search_pos_1, search_pos_2}
     -- for _, search_pos in ipairs(search_list) do
-        local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(search_pos_1, search_pos_2, "Static", false, false)
+        local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(search_pos_2, search_pos_1, "Static", false, false)
         if res then
-            if trace.material.value == "concrete.physmat" and not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
+            -- if trace.material.value == "concrete.physmat" and not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
+            if not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
                 self.log_obj:Record(LogLevel.Trace, "Touch Concrete")
-                self.is_invisible_collision = true
-                local pos = self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos)
-                local angle = player:GetWorldOrientation():ToEulerAngles()
-                Game.GetTeleportationFacility():Teleport(player, pos, angle)
+                -- local pos = self.metro_obj:GetAccurateWorldPosition(self.prev_player_local_pos)
+                -- local angle = player:GetWorldOrientation():ToEulerAngles()
+                -- Game.GetTeleportationFacility():Teleport(player, pos, angle)
                 -- self.invisible_collision_count = self.invisible_collision_count + 1
+                InsideMetro.is_free_move = true
+                return
+            end
+        end
+        res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(search_pos_2, search_pos_3, "Static", false, false)
+        if res then
+            if not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
+                self.log_obj:Record(LogLevel.Trace, "Touch Concrete")
+                InsideMetro.is_free_move = true
                 return
             end
         end
     -- end
-    -- self.invisible_collision_count = 0
-    self.is_invisible_collision = false
+    InsideMetro.is_free_move = false
+    self.invisible_collision_count = 0
     if self.is_on_ground then
         self.prev_player_local_pos = local_player_pos
         return

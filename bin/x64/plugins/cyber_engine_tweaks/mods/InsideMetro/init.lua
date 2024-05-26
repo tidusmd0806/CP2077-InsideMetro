@@ -16,6 +16,7 @@ InsideMetro = {
 	description = "Inside The Metro",
 	version = "0.2.0",
     is_debug_mode = true,
+    is_free_move = false,
     -- version check
     cet_required_version = 32.2, -- 1.32.2
     cet_recommended_version = 32.2, -- 1.32.2
@@ -48,12 +49,9 @@ end)
 
 registerForEvent('onUpdate', function(delta)
     Cron.Update(delta)
-    -- if InsideMetro.core_obj.event_obj.is_invisible_collision then
-    --     InsideMetro.core_obj:UpdateInMetro(delta)
-    -- end
-    -- if InsideMetro.core_obj.event_obj:IsInWalking() and is_odd then
-    --     InsideMetro.core_obj:UpdateInMetro(delta)
-    -- end
+    if InsideMetro.is_free_move then
+        InsideMetro.core_obj:UpdateInMetro(delta)
+    end
 end)
 
 function InsideMetro:CheckDependencies()

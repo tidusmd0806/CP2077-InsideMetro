@@ -22,8 +22,8 @@ function Core:New()
     obj.sit_down_anim = "sit_chair_lean180__2h_on_lap__01"
     obj.ristricted_station_area = {
         -- C Line
-        {x = -1322, y = -62, z = -3, r = 50}, -- Memorial Park
-        {x = -1114, y = -324, z = -15, r = 50}, -- Congress & MLK
+        -- {x = -1322, y = -62, z = -3, r = 50}, -- Memorial Park
+        -- {x = -1114, y = -324, z = -15, r = 50}, -- Congress & MLK
         -- {x = -1478, y = -1893, z = 71, r = 150}, -- Pacifica Stadium
         -- D Line
         -- {x = -1238, y = 19, z = 63, r = 50}, -- Memorial Park
@@ -32,7 +32,7 @@ function Core:New()
         -- CD Line
         {x = -1478, y = -1893, z = 71, r = 50}, -- Pacifica Stadium
         -- D Line
-        {x = -1238, y = 19, z = 63, r = 50}, -- Memorial Park
+        {x = -1322, y = -62, z = -3, r = 50}, -- Memorial Park
     }
     -- dynamic --
     obj.move_forward = false
@@ -265,8 +265,7 @@ function Core:UpdateInMetro(delta)
 
     local player = Game.GetPlayer()
     local world_player_pos = self.metro_obj:GetAccurateWorldPosition(self.event_obj.prev_player_local_pos)
-    -- local world_player_pos = player:GetWorldPosition()
-    local move_speed = 2
+    local move_speed = 1
     local forward_dir = player:GetWorldForward()
     local right_dir = player:GetWorldRight()
     local x,y = world_player_pos.x, world_player_pos.y

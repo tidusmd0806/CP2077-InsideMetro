@@ -190,11 +190,12 @@ function Debug:ImGuiMetroSpeed()
     if self.is_im_gui_metro_speed then
         local metro_speed = self.core_obj.metro_obj:GetSpeed()
         ImGui.Text("Metro Speed : " .. metro_speed)
-        local id = self.core_obj.metro_obj.entity_id
-        if id == nil then
-            return
+        local res = self.core_obj.event_obj.is_on_ground
+        if res then
+            ImGui.Text("On Ground : True")
+        else
+            ImGui.Text("On Ground : False")
         end
-        ImGui.Text("Entity ID : " .. tostring(id.hash))
     end
 end
 
@@ -280,11 +281,7 @@ function Debug:ImGuiExcuteFunction()
     ImGui.SameLine()
     if ImGui.Button("TF6") then
         local current_pos = Game.GetPlayer():GetWorldPosition()
-        local next_pos = Vector4.new(current_pos.x, current_pos.y, current_pos.z - 5, 1)
-        local filter = "Static"
-        local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(current_pos, next_pos, filter, false, false)
-        local pos = trace.position
-        print(pos.x .. ", " .. pos.y .. ", " .. pos.z)
+        print(current_pos.x .. ", " .. current_pos.y .. ", " .. current_pos.z)
         print("Excute Test Function 6")
     end
 
