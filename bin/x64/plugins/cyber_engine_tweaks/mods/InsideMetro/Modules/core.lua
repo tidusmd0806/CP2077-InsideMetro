@@ -21,18 +21,21 @@ function Core:New()
     obj.stand_up_anim = "sit_chair_lean0__2h_elbow_on_knees__01__to__stand__2h_on_sides__01__turn0__q005_01__01"
     obj.sit_down_anim = "sit_chair_lean180__2h_on_lap__01"
     obj.ristricted_station_area = {
-        -- C Line
-        -- {x = -1322, y = -62, z = -3, r = 50}, -- Memorial Park
-        -- {x = -1114, y = -324, z = -15, r = 50}, -- Congress & MLK
-        -- {x = -1478, y = -1893, z = 71, r = 150}, -- Pacifica Stadium
-        -- D Line
-        -- {x = -1238, y = 19, z = 63, r = 50}, -- Memorial Park
-    }
-    obj.terminus = {
-        -- CD Line
-        {x = -1478, y = -1893, z = 71, r = 50}, -- Pacifica Stadium
-        -- D Line
-        {x = -1322, y = -62, z = -3, r = 50}, -- Memorial Park
+        -- {x = -506, y = 1147, z = 104, r = 50, name = "MONROE_AND_SAGAN"},
+        {x = -795, y = 1333, z = 87, r = 50, name = "EAST_BRIDGE"}, 
+        {x = -1415, y = 1042, z = 47, r = 50, name = "ELLISON_PLAZA"},
+        {x = -1774, y = 1853, z = 48, r = 50, name = "EISENHOWER_STREET"},
+        {x = -1461, y = 1170, z = 46, r = 50, name = "MEGABUILDING_H10"},
+        {x = 168, y = -1172, z = 40, r = 50, name = "MEGABUILDING_H7"},
+        -- {x = -121, y = 130, z = 52, r = 50, name = "CHARTER_HILL"},
+        -- {x = -445, y = 212, z = 52, r = 50, name = "E_LINE_FINAL_POINT"},
+        {x = -1478, y = -1893, z = 71, r = 50, name = "PACIFICA_STADIUM"},
+        {x = -1322, y = -62, z = -3, r = 50, name = "MEMORIAL_PARK"},
+        {x = -1355, y = 1740, z = 45, r = 50, name = "MEDCENTER"},
+        {x = -1598, y = 1484, z = 48, r = 50, name = "FARRIER_AND_FERGUSON"},
+        {x = -2085, y = 835, z = 69, r = 50, name = "WEST_BRIDGE"},
+        {x = -741, y = -596, z = 37, r = 50, name = "C_LINE_RAINBOW_1"},
+        {x = -1044, y = -376, z = 3, r = 50, name = "C_LINE_RAINBOW_2"},
     }
     -- dynamic --
     obj.move_forward = false
@@ -248,24 +251,12 @@ function Core:IsInRestrictedArea()
 
 end
 
-function Core:IsInTerminus()
-
-    local player_pos = Game.GetPlayer():GetWorldPosition()
-    for _, area in ipairs(self.terminus) do
-        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
-        if distance < area.r then
-            return true
-        end
-    end
-    return false
-
-end
-
 function Core:UpdateInMetro(delta)
 
     local player = Game.GetPlayer()
-    local world_player_pos = self.metro_obj:GetAccurateWorldPosition(self.event_obj.prev_player_local_pos)
-    local move_speed = 1
+    local local_player_pos = Vector4.new(self.event_obj.prev_player_local_pos.x, self.event_obj.prev_player_local_pos.y, 0.5, 1)
+    local world_player_pos = self.metro_obj:GetAccurateWorldPosition(local_player_pos)
+    local move_speed = 1.5
     local forward_dir = player:GetWorldForward()
     local right_dir = player:GetWorldRight()
     local x,y = world_player_pos.x, world_player_pos.y

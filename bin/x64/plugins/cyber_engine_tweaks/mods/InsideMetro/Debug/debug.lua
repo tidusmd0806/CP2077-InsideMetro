@@ -43,12 +43,12 @@ function Debug:SetObserver()
         -- Observe('DataTerm', 'OpenSubwayGate', function(this)
         --     print('OpenSubwayGate')
         -- end)
-        Observe('FastTravelSystem', 'PerformFastTravel', function(this)
-            print('PerformFastTravel')
-        end)
-        -- Observe('gameIWorkspotGameSystem', 'PlayInDevice', function(this)
-        --     print('PlayInDevice')
+        -- Observe('FastTravelSystem', 'PerformFastTravel', function(this)
+        --     print('PerformFastTravel')
         -- end)
+        Observe('MenuScenario_FastTravel', 'OnEnterScenario', function(this)
+            print('MenuScenario_FastTravel')
+        end)
         -- Observe('DataTerm', 'OnFastTravelPointsUpdated', function(this)
         --     print('OnFastTravelPointsUpdated')
         --     self.ft = this.linkedFastTravelPoint
@@ -247,10 +247,19 @@ end
 
 function Debug:ImGuiExcuteFunction()
     if ImGui.Button("TF1") then
-        local com = Game.GetPlayer():GetMovePolicesComponent()
-        if com == nil then
-            print("MovePolicesComponent is nil")
+        local sys = Game.GetPlayer():GetFastTravelSystem()
+        local arr = sys:GetFastTravelPoints()
+        print(#arr)
+        for _, point in ipairs(arr) do
+            local pointID = tostring(point.pointRecord.value)
+            if string.find(pointID, 'wat_lch_metro_ftp_02', 1, true) then
+                print("aaa")
+                pointData = point
+                break
+            end
         end
+        sys:PerformFastTravel(Game.GetPlayer(), pointData)
+        sys:SetFastTravelStarted()
         print("Excute Test Function 1")
     end
     ImGui.SameLine()
