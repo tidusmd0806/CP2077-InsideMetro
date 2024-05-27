@@ -28,14 +28,14 @@ function Core:New()
         {x = -1461, y = 1170, z = 46, r = 50, name = "MEGABUILDING_H10"},
         {x = 168, y = -1172, z = 40, r = 50, name = "MEGABUILDING_H7"},
         -- {x = -121, y = 130, z = 52, r = 50, name = "CHARTER_HILL"},
-        -- {x = -445, y = 212, z = 52, r = 50, name = "E_LINE_FINAL_POINT"},
+        {x = -504, y = -167, z = 50, r = 50, name = "E_LINE_FINAL_POINT"},
         {x = -1478, y = -1893, z = 71, r = 150, name = "PACIFICA_STADIUM"},
         {x = -1115, y = -322, z = -15, r = 50, name = "CONGRESS_AND_MLK"},
         {x = -1322, y = -62, z = -3, r = 50, name = "MEMORIAL_PARK"},
         {x = -1355, y = 1740, z = 45, r = 50, name = "MEDCENTER"},
         {x = -1598, y = 1484, z = 48, r = 50, name = "FARRIER_AND_FERGUSON"},
         {x = -2085, y = 835, z = 69, r = 50, name = "WEST_BRIDGE"},
-        -- {x = -741, y = -596, z = 37, r = 50, name = "C_LINE_RAINBOW_1"},
+        {x = -741, y = -596, z = 37, r = 50, name = "C_LINE_RAINBOW_1"},
         -- {x = -1044, y = -376, z = 3, r = 50, name = "C_LINE_RAINBOW_2"},
     }
     -- dynamic --
@@ -270,6 +270,9 @@ function Core:IsInRestrictedArea()
     for _, area in ipairs(self.ristricted_station_area) do
         local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
         if distance < area.r then
+            if area.name == "E_LINE_FINAL_POINT" then
+                self.event_obj.is_passed_e_line_final_point = true
+            end
             return true
         end
     end
@@ -277,18 +280,19 @@ function Core:IsInRestrictedArea()
 
 end
 
--- function Core:IsNeededStandStation()
---     local player_pos = Game.GetPlayer():GetWorldPosition()
---     for _, area in ipairs(self.ristricted_station_area) do
---         local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
---         if distance < area.r then
---             if area.name == "PACIFICA_STADIUM" then
---                 return true
---             end
---         end
---     end
---     return false
--- end
+function Core:IsPassedELineFinalPoint()
+
+    local player_pos = Game.GetPlayer():GetWorldPosition()
+    for _, area in ipairs(self.ristricted_station_area) do
+        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
+        if distance < area.r then
+            if area.name == "E_LINE_FINAL_POINT"  then
+                self.event_obj.is_passed_e_line_final_point = true
+            end
+        end
+    end
+
+end
 
 function Core:UpdateInMetro(delta)
 

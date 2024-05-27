@@ -13,15 +13,14 @@ function Event:New(player_obj, metro_obj)
     obj.metro_obj = metro_obj
     -- static --
     obj.stand_rock_time = 3
-    obj.invisible_collision_count_max = 10
     -- dynamic --
     obj.current_status = Def.State.OutsideMetro
     obj.prev_player_local_pos = metro_obj.default_position
     obj.is_on_ground = false
     obj.is_initial = false
-    obj.invisible_collision_count = 0
     obj.is_ready = false
     obj.is_invisible_collision = false
+    obj.is_passed_e_line_final_point = false
     return setmetatable(obj, self)
 end
 
@@ -40,6 +39,7 @@ function Event:Uninitialize()
     self.is_initial = false
     self.is_ready = false
     self.is_invisible_collision = false
+    self.is_passed_e_line_final_point = false
     self.player_obj:DeleteWorkspot()
     self.current_status = Def.State.OutsideMetro
     -- self:RemoveRestrictions()
@@ -242,9 +242,9 @@ function Event:CheckAllEvents()
     elseif self.current_status == Def.State.SitInsideMetro then
         self:CheckEnableStand()
         self:CheckOutsideMetro()
+        self:CheckPassingElineFinalPoint()
     elseif self.current_status == Def.State.EnableStand then
         self:CheckEnableStand()
-        -- self:CheckStandStation()
     elseif self.current_status == Def.State.EnableSit then
         self:CheckEnableSit()
         self:CheckInvalidPosition()
@@ -259,6 +259,10 @@ function Event:CheckAllEvents()
         self:CheckGetOff()
     end
 
+end
+
+function Event:CheckPassingElineFinalPoint()
+    InsideMetro.core_obj:IsPassedELineFinalPoint()
 end
 
 function Event:CheckGetOff()
@@ -305,14 +309,6 @@ end
 
 function Event:CheckEnableStand()
 
-    if self.invisible_collision_count >= self.invisible_collision_count_max then
-        if self.metro_obj:GetSpeed() >= 0.001 then
-            return
-        else
-            self.invisible_collision_count = 0
-        end
-    end
-
     if not self.is_ready then
         if self.metro_obj:GetSpeed() >= 0.001 then
             self.is_ready = true
@@ -320,9 +316,14 @@ function Event:CheckEnableStand()
     end
 
     if self.metro_obj:GetSpeed() < 0.001 then
-        self.log_obj:Record(LogLevel.Debug, "Detect Enable Stand")
-        if self.is_ready then
-            self:SetStatus(Def.State.EnableStand)
+        if self:IsCharterHill() and self.is_passed_e_line_final_point then
+            self.log_obj:Record(LogLevel.Debug, "Detect Charter Hill")
+            self:SetStatus(Def.State.SitInsideMetro)
+        else
+            self.log_obj:Record(LogLevel.Debug, "Detect Enable Stand")
+            if self.is_ready then
+                self:SetStatus(Def.State.EnableStand)
+            end
         end
     else
         self.log_obj:Record(LogLevel.Debug, "Detect Disable Stand")
@@ -331,14 +332,17 @@ function Event:CheckEnableStand()
 
 end
 
--- function Event:CheckStandStation()
+function Event:IsCharterHill()
+    
+    local player_pos = Game.GetPlayer():GetWorldPosition()
+    local charter_hill_pos = Vector4.new(-121, 130, 52, 1)
+    local distance = Vector4.Distance(player_pos, charter_hill_pos)
+    if distance < 50 then
+        return true
+    end
+    return false
 
---     if InsideMetro.core_obj:IsNeededStandStation() then
---         self.log_obj:Record(LogLevel.Debug, "Player is in Stand Station")
---         InsideMetro.core_obj:EnableWalkingMetro()
---     end
-
--- end
+end
 
 function Event:CheckEnableSit()
 
