@@ -5,56 +5,64 @@
 --------------------------------------------------------
 
 Cron = require('External/Cron.lua')
+Def = require('Tools/def.lua')
+GameUI = require('External/GameUI.lua')
 Log = require("Tools/log.lua")
 
 local Core = require('Modules/core.lua')
 local Debug = require('Debug/debug.lua')
 
-ITM = {
+InsideMetro = {
 	description = "Inside The Metro",
-	version = "0.0.1",
-    is_debug_mode = true,
+	version = "0.0.3",
+    is_debug_mode = false,
+    is_free_move = false,
     -- version check
-    cet_required_version = 32.1, -- 1.32.1
+    cet_required_version = 32.2, -- 1.32.2
     cet_recommended_version = 32.2, -- 1.32.2
     cet_version_num = 0,
 }
 
 registerForEvent('onInit', function()
 
-    if not ITM:CheckDependencies() then
+    if not InsideMetro:CheckDependencies() then
         print('[Error] Inside The Metro Mod failed to load due to missing dependencies.')
         return
     end
 
-    ITM.core_obj = Core:New()
-    ITM.debug_obj = Debug:New(ITM.core_obj)
+    InsideMetro.core_obj = Core:New()
+    InsideMetro.debug_obj = Debug:New(InsideMetro.core_obj)
+
+    InsideMetro.core_obj:Initialize()
 
     print('Inside The Metro Mod is ready!')
 
 end)
 
 registerForEvent("onDraw", function()
-    if ITM.is_debug_mode then
-        if ITM.debug_obj ~= nil then
-            ITM.debug_obj:ImGuiMain()
+    if InsideMetro.is_debug_mode then
+        if InsideMetro.debug_obj ~= nil then
+            InsideMetro.debug_obj:ImGuiMain()
         end
     end
 end)
 
 registerForEvent('onUpdate', function(delta)
     Cron.Update(delta)
+    if InsideMetro.is_free_move then
+        InsideMetro.core_obj:UpdateInMetro(delta)
+    end
 end)
 
-function ITM:CheckDependencies()
+function InsideMetro:CheckDependencies()
 
     -- Check Cyber Engine Tweaks Version
     local cet_version_str = GetVersion()
     local cet_version_major, cet_version_minor = cet_version_str:match("1.(%d+)%.*(%d*)")
-    ITM.cet_version_num = tonumber(cet_version_major .. "." .. cet_version_minor)
+    InsideMetro.cet_version_num = tonumber(cet_version_major .. "." .. cet_version_minor)
 
-    if ITM.cet_version_num < ITM.cet_required_version then
-        print("Inside The Metro Mod requires Cyber Engine Tweaks version 1." .. ITM.cet_required_version .. " or higher.")
+    if InsideMetro.cet_version_num < InsideMetro.cet_required_version then
+        print("Inside The Metro Mod requires Cyber Engine Tweaks version 1." .. InsideMetro.cet_required_version .. " or higher.")
         return false
     end
 
@@ -62,4 +70,4 @@ function ITM:CheckDependencies()
 
 end
 
-return ITM
+return InsideMetro
