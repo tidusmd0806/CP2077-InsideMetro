@@ -1,3 +1,4 @@
+local Data = require("Tools/data.lua")
 local Event = require('Modules/event.lua')
 local Metro = require('Modules/metro.lua')
 local Player = require('Modules/player.lua')
@@ -22,7 +23,7 @@ function Core:New()
     obj.sit_down_anim = "sit_chair_lean180__2h_on_lap__01"
     obj.ristricted_station_area = {
         -- {x = -506, y = 1147, z = 104, r = 50, name = "MONROE_AND_SAGAN"},
-        {x = -795, y = 1333, z = 87, r = 50, name = "EAST_BRIDGE"}, 
+        -- {x = -795, y = 1333, z = 87, r = 50, name = "EAST_BRIDGE"}, 
         {x = -1415, y = 1042, z = 47, r = 50, name = "ELLISON_PLAZA"},
         {x = -1774, y = 1853, z = 48, r = 50, name = "EISENHOWER_STREET"},
         {x = -1461, y = 1170, z = 46, r = 50, name = "MEGABUILDING_H10"},
@@ -30,12 +31,12 @@ function Core:New()
         -- {x = -121, y = 130, z = 52, r = 50, name = "CHARTER_HILL"},
         {x = -504, y = -167, z = 50, r = 50, name = "E_LINE_FINAL_POINT"},
         {x = -1478, y = -1893, z = 71, r = 150, name = "PACIFICA_STADIUM"},
-        {x = -1115, y = -322, z = -15, r = 50, name = "CONGRESS_AND_MLK"},
+        -- {x = -1115, y = -322, z = -15, r = 50, name = "CONGRESS_AND_MLK"},
         {x = -1322, y = -62, z = -3, r = 50, name = "MEMORIAL_PARK"},
         {x = -1355, y = 1740, z = 45, r = 50, name = "MEDCENTER"},
         {x = -1598, y = 1484, z = 48, r = 50, name = "FARRIER_AND_FERGUSON"},
-        {x = -2085, y = 835, z = 69, r = 50, name = "WEST_BRIDGE"},
-        {x = -741, y = -596, z = 37, r = 50, name = "C_LINE_RAINBOW_1"},
+        -- {x = -2085, y = 835, z = 69, r = 50, name = "WEST_BRIDGE"},
+        -- {x = -741, y = -596, z = 37, r = 50, name = "C_LINE_RAINBOW_1"},
         -- {x = -1044, y = -376, z = 3, r = 50, name = "C_LINE_RAINBOW_2"},
     }
     -- dynamic --

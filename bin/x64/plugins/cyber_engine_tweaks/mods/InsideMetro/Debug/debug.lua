@@ -11,6 +11,7 @@ function Debug:New(core_obj)
     obj.is_im_gui_seat_position = false
     obj.is_im_gui_metro_speed = false
     obj.is_set_observer = false
+    obj.is_im_gui_line_info = false
     obj.is_im_gui_measurement = false
     obj.is_im_gui_ristrict = false
     return setmetatable(obj, self)
@@ -29,6 +30,7 @@ function Debug:ImGuiMain()
     self:ImGuiSeatPosition()
     self:ImGuiMetroSpeed()
     self:ImGuiRistrictedArea()
+    self:ImGuiLineInfo()
     self:ImGuiMeasurement()
     self:ImGuiExcuteFunction()
 
@@ -94,9 +96,23 @@ function Debug:SetObserver()
         -- Observe("DataTerm", "OnAreaExit", function(this, evt)
         --     print('OnAreaExit')
         -- end)
-        Observe("FastTravelComponent", "PerformFastTravel", function(this, pointData, player)
-            print('PerformFastTravel')
-        end)
+        -- Observe("FastTravelSystem", "QueueRequest", function(this, request)
+        --     if string.find(request:ToString(), "RegisterFastTravelPointRequest") then
+        --         print(request:ToString())
+        --         print(request.pointData.pointRecord.value)
+        --         print(request.requesterID.hash)
+        --     elseif string.find(request:ToString(), "EnableFastTravelRequest") then
+        --         print(request:ToString())
+        --         print(request.forceRefreshUI)
+        --         print(request.isEnabled)
+        --         print(request.linkedStatusEffectID.value)
+        --         print(request.reason.value)
+        --     end
+        -- end)
+        
+        -- Observe("FastTravelComponent", "PerformFastTravel", function(this, pointData, player)
+        --     print('PerformFastTravel')
+        -- end)
         
         -- Observe("DataTermControllerPS", "GetBlackboardDef", function(this)
         --     print('GetBlackboardDef')
@@ -152,6 +168,20 @@ function Debug:SetObserver()
         --         print("collision")
         --     end
         -- end)
+        -- Observe("QuestsSystem", "GetFact", function(this, factName)
+        --     if string.find(factName.value, "ue_metro") then
+        --         print('GetFact')
+        --         print(factName.value)
+        --     end
+        -- end)
+        -- Observe("QuestsSystem", "SetFact", function(this, factName, value)
+        --     if string.find(factName.value, "ue_metro") then
+        --         print('SetFact')
+        --         print(factName.value)
+        --         print(value)
+        --     end
+        -- end)
+    
     end
     self.is_set_observer = true
 
@@ -304,6 +334,18 @@ function Debug:ImGuiRistrictedArea()
     end
 end
 
+function Debug:ImGuiLineInfo()
+    self.is_im_gui_line_info = ImGui.Checkbox("[ImGui] Line Info", self.is_im_gui_line_info)
+    if self.is_im_gui_line_info then
+        local active_station = Game.GetQuestsSystem():GetFact(CName.new("ue_metro_active_station"))
+        local next_station = Game.GetQuestsSystem():GetFact(CName.new("ue_metro_next_station"))
+        local line = Game.GetQuestsSystem():GetFact(CName.new("ue_metro_track_selected"))
+        ImGui.Text("Activate Station : " .. active_station)
+        ImGui.Text("Next Station : " .. next_station)
+        ImGui.Text("Line : " .. line)
+    end
+end 
+
 function Debug:ImGuiMeasurement()
     self.is_im_gui_measurement = ImGui.Checkbox("[ImGui] Measurement", self.is_im_gui_measurement)
     if self.is_im_gui_measurement then
@@ -414,7 +456,18 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF4") then
-        self.core_obj.event_obj.hud_obj:HideChoice()
+        -- local sys = Game.GetPlayer():GetFastTravelSystem()
+        -- local ft_point = RegisterFastTravelPointsRequest.new()
+        -- ft_point.forceRefreshUI = true
+        -- ft_point.isEnabled = true
+        -- ft_point.reason = CName.new("InVehicle")
+        -- local ft_enable = EnableFastTravelRequest.new()
+        -- sys:QueueRequest(ft_enable)
+        -- local questsSystem = Game.GetQuestsSystem()
+        -- local factMetroStationNext = CName.new("ue_metro_next_station")
+        -- local metroStationNextListenerId = questsSystem.RegisterListener(factMetroStationNext, this, n"OnMetroStationNextChange");
+        local system = Game.GetQuestsSystem()
+        system:SetFact(CName.new("ue_metro_next_station"), 1) 
         print("Excute Test Function 4")
     end
     ImGui.SameLine()

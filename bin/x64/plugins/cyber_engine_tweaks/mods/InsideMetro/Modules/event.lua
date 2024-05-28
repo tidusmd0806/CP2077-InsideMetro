@@ -21,11 +21,12 @@ function Event:New(player_obj, metro_obj)
     obj.is_ready = false
     obj.is_invisible_collision = false
     obj.is_passed_e_line_final_point = false
+    obj.next_station_num = 1
+    obj.selected_truck_index = 1
     return setmetatable(obj, self)
 end
 
 function Event:Initialize()
-    -- self:SetRestrictions()
     self:SetTouchGroundObserver()
     self:SetInteractionUIObserver()
     self:SetGameUIObserver()
@@ -42,7 +43,6 @@ function Event:Uninitialize()
     self.is_passed_e_line_final_point = false
     self.player_obj:DeleteWorkspot()
     self.current_status = Def.State.OutsideMetro
-    -- self:RemoveRestrictions()
 
 end
 
@@ -121,11 +121,12 @@ function Event:SetStatus(status)
     if self.current_status == Def.State.OutsideMetro and status == Def.State.SitInsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status from OutsideMetro to SitInsideMetro")
         self.metro_obj:SetPlayerSeatPosition()
-        if InsideMetro.core_obj:IsLineC() then
-            self.log_obj:Record(LogLevel.Info, "Line C Detected")
-            self.current_status = Def.State.Invalid
-            return false
-        end
+        self:SetInitialStationInfo()
+        -- if InsideMetro.core_obj:IsLineC() then
+        --     self.log_obj:Record(LogLevel.Info, "Line C Detected")
+        --     self.current_status = Def.State.Invalid
+        --     return false
+        -- end
         self.current_status = Def.State.SitInsideMetro
         return true
     elseif self.current_status == Def.State.SitInsideMetro and status == Def.State.EnableStand then
@@ -209,6 +210,19 @@ function Event:IsOnGround()
     return self.is_on_ground
 end
 
+function Event:IsPassedRestrictedBorder()
+
+    local player_pos = Game.GetPlayer():GetWorldPosition()
+    for _, point in ipairs(Data.Border) do
+        local distance = Vector4.Distance(player_pos, Vector4.new(point.x, point.y, point.z, 1))
+        if distance < point.r then
+            return true
+        end
+    end
+    return false
+
+end
+
 function Event:GetStatus()
     return self.current_status
 end
@@ -243,6 +257,7 @@ function Event:CheckAllEvents()
         self:CheckEnableStand()
         self:CheckOutsideMetro()
         self:CheckPassingElineFinalPoint()
+        self:CheckNextStation()
     elseif self.current_status == Def.State.EnableStand then
         self:CheckEnableStand()
     elseif self.current_status == Def.State.EnableSit then
@@ -333,7 +348,7 @@ function Event:CheckEnableStand()
 end
 
 function Event:IsCharterHill()
-    
+
     local player_pos = Game.GetPlayer():GetWorldPosition()
     local charter_hill_pos = Vector4.new(-121, 130, 52, 1)
     local distance = Vector4.Distance(player_pos, charter_hill_pos)
@@ -342,6 +357,29 @@ function Event:IsCharterHill()
     end
     return false
 
+end
+
+function Event:SetInitialStationInfo()
+
+        local quest_system = Game.GetQuestsSystem()
+        local track_num = quest_system:GetFact("ue_metro_track_selected")
+        local next_station_num = quest_system:GetFact("ue_metro_next_station")
+        self.selected_truck_index = track_num
+        if next_station_num ~= 0 then
+            self.next_station_num = next_station_num
+        end
+
+    end
+
+function Event:CheckNextStation()
+    local quest_system = Game.GetQuestsSystem()
+    local next_station_num = quest_system:GetFact("ue_metro_next_station")
+    if next_station_num == 0 then
+        self.log_obj:Record(LogLevel.Info, "Detect Next Station")
+        quest_system:SetFact("ue_metro_next_station", self.next_station_num)
+    else
+        self.next_station_num = next_station_num
+    end
 end
 
 function Event:CheckEnableSit()
@@ -373,6 +411,13 @@ function Event:CheckRestrictedArea()
         self.log_obj:Record(LogLevel.Info, "Player is in Restricted Area")
         InsideMetro.is_free_move = false
         InsideMetro.core_obj:DisableWalkingMetro()
+        return
+    end
+    if self:IsPassedRestrictedBorder() then
+        self.log_obj:Record(LogLevel.Info, "Player is passed Restricted Border")
+        InsideMetro.is_free_move = false
+        InsideMetro.core_obj:DisableWalkingMetro()
+        return
     end
 
 end
