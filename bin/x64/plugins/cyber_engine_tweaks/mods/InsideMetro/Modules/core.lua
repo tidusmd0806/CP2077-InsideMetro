@@ -1,4 +1,3 @@
-local Data = require("Tools/data.lua")
 local Event = require('Modules/event.lua')
 local Metro = require('Modules/metro.lua')
 local Player = require('Modules/player.lua')
@@ -69,7 +68,7 @@ function Core:SetObserverAction()
         self.log_obj:Record(LogLevel.Debug, "Action Name: " .. action_name .. " Type: " .. action_type .. " Value: " .. action_value)
 
         local status = self.event_obj:GetStatus()
-        if status == Def.State.EnableStand and not self:IsInRestrictedArea() then
+        if status == Def.State.EnableStand and not self.metro_obj:IsInvalidStation() then
             if (action_name == "UETChangePose" and action_type == "BUTTON_PRESSED") or (action_name == "UETWindow" and action_type == "BUTTON_PRESSED") or (action_name == "UETExit" and action_type == "BUTTON_PRESSED") then
                 consumer:Consume()
             end
@@ -85,7 +84,7 @@ function Core:SetObserverAction()
             end
         end
 
-        -- 
+        -- refer to free fly mod (https://www.nexusmods.com/cyberpunk2077/mods/780)
         if action_name == 'Forward' then
             if action_type == 'BUTTON_PRESSED' then
                 self.move_forward = true
@@ -158,19 +157,6 @@ function Core:SetFreezeMode(is_freeze)
     end
 end
 
-function Core:IsLineC()
-    local player_pos = Game.GetPlayer():GetWorldPosition()
-    for _, area in ipairs(self.ristricted_station_area) do
-        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
-        if distance < area.r then
-            if area.name == "CONGRESS_AND_MLK" or area.name == "MEMORIAL_PARK" then
-                return true
-            end
-        end
-    end
-    return false
-end
-
 function Core:EnableWalkingMetro()
 
     if self.is_switching_pose then
@@ -187,6 +173,7 @@ function Core:EnableWalkingMetro()
     else
         workspot_angle.yaw = workspot_angle.yaw + 180
     end
+    local_workspot_pos.y = local_workspot_pos.y + self.event_obj.standing_y_offset
     local world_pos = self.metro_obj:GetAccurateWorldPosition(local_workspot_pos)
     self.player_obj:PlayPose(self.stand_up_anim, world_pos, workspot_angle)
     self:KeepWorkspotSeatPostion(local_workspot_pos, workspot_angle)
@@ -265,37 +252,7 @@ function Core:KeepWorkspotSeatPostion(local_pos, angle)
 
 end
 
-function Core:IsInRestrictedArea()
-
-    local player_pos = Game.GetPlayer():GetWorldPosition()
-    for _, area in ipairs(self.ristricted_station_area) do
-        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
-        if distance < area.r then
-            if area.name == "E_LINE_FINAL_POINT" then
-                self.event_obj.is_passed_e_line_final_point = true
-            end
-            return true
-        end
-    end
-    return false
-
-end
-
-function Core:IsPassedELineFinalPoint()
-
-    local player_pos = Game.GetPlayer():GetWorldPosition()
-    for _, area in ipairs(self.ristricted_station_area) do
-        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
-        if distance < area.r then
-            if area.name == "E_LINE_FINAL_POINT"  then
-                self.event_obj.is_passed_e_line_final_point = true
-            end
-        end
-    end
-
-end
-
-function Core:UpdateInMetro(delta)
+function Core:UpdateAvoidanceMove(delta)
 
     local player = Game.GetPlayer()
     local local_player_pos = Vector4.new(self.event_obj.prev_player_local_pos.x, self.event_obj.prev_player_local_pos.y, 0.5, 1)

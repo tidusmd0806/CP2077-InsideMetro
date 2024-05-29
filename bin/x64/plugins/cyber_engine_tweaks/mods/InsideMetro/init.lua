@@ -5,6 +5,7 @@
 --------------------------------------------------------
 
 Cron = require('External/Cron.lua')
+Data = require("Tools/data.lua")
 Def = require('Tools/def.lua')
 GameUI = require('External/GameUI.lua')
 Log = require("Tools/log.lua")
@@ -16,10 +17,9 @@ InsideMetro = {
 	description = "Inside The Metro",
 	version = "0.0.4",
     is_debug_mode = true,
-    is_free_move = false,
+    is_avoidance_mode = false,
     -- version check
     cet_required_version = 32.2, -- 1.32.2
-    cet_recommended_version = 32.2, -- 1.32.2
     cet_version_num = 0,
 }
 
@@ -49,8 +49,8 @@ end)
 
 registerForEvent('onUpdate', function(delta)
     Cron.Update(delta)
-    if InsideMetro.is_free_move then
-        InsideMetro.core_obj:UpdateInMetro(delta)
+    if InsideMetro.is_avoidance_mode then
+        InsideMetro.core_obj:UpdateAvoidanceMove(delta)
     end
 end)
 

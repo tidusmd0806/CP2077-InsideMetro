@@ -42,126 +42,6 @@ function Debug:SetObserver()
 
     if not self.is_set_observer then
         -- reserved
-        -- Observe("DataTerm", "CloseSubwayGate", function(this)
-        --     print('OpenSubwayGate')
-        -- end)
-        -- Observe("DataTerm", "DeterminGameplayRole", function(this)
-        --     print('DeterminGameplayRole')
-        -- end)
-        -- Observe("DataTerm", "GetBlackboardDef", function(this)
-        --     print('GetBlackboardDef')
-        -- end)
-        -- Observe("DataTerm", "GetDevicePS", function(this)
-        --     print('GetDevicePS')
-        -- end)
-        -- Observe("DataTerm", "GetFastravelDeviceType", function(this)
-        --     print('GetFastravelDeviceType')
-        -- end)
-        -- Observe("DataTerm", "GetFastravelPointData", function(this)
-        --     print('GetFastravelPointData')
-        -- end)
-        -- Observe("DataTerm", "IsFastTravelPoint", function(this)
-        --     print('IsFastTravelPoint')
-        -- end)
-        -- Observe("DataTerm", "IsGameplayRoleValid", function(this)
-        --     print('IsGameplayRoleValid')
-        -- end)
-        -- Observe("DataTerm", "IsSubwayGateBroken", function(this)
-        --     print('IsSubwayGateBroken')
-        -- end)       
-        -- Observe('DataTerm', 'OpenSubwayGate', function(this)
-        --     print('OpenSubwayGate')
-        -- end)
-        -- Observe("DataTerm", "ActivateDevice", function(this)
-        --     print('ActivateDevice')
-        -- end)
-        -- Observe("DataTerm", "CreateBlackboard", function(this)
-        --     print('CreateBlackboard')
-        -- end)
-        -- Observe("DataTerm", "CutPower", function(this)
-        --     print('CutPower')
-        -- end)
-        -- Observe("DataTerm", "DeactivateDevice", function(this)
-        --     print('DeactivateDevice')
-        -- end)
-        -- Observe("DataTerm", "GetController", function(this)
-        --     print('GetController')
-        -- end)
-        -- Observe("DataTerm", "IsReadyForUI", function(this)
-        --     print('IsReadyForUI')
-        -- end)
-        -- Observe("DataTerm", "OnAreaEnter", function(this, evt)
-        --     print('OnAreaEnter')
-        -- end)
-        -- Observe("DataTerm", "OnAreaExit", function(this, evt)
-        --     print('OnAreaExit')
-        -- end)
-        -- Observe("FastTravelSystem", "QueueRequest", function(this, request)
-        --     if string.find(request:ToString(), "RegisterFastTravelPointRequest") then
-        --         print(request:ToString())
-        --         print(request.pointData.pointRecord.value)
-        --         print(request.requesterID.hash)
-        --     elseif string.find(request:ToString(), "EnableFastTravelRequest") then
-        --         print(request:ToString())
-        --         print(request.forceRefreshUI)
-        --         print(request.isEnabled)
-        --         print(request.linkedStatusEffectID.value)
-        --         print(request.reason.value)
-        --     end
-        -- end)
-        
-        -- Observe("FastTravelComponent", "PerformFastTravel", function(this, pointData, player)
-        --     print('PerformFastTravel')
-        -- end)
-        
-        -- Observe("DataTermControllerPS", "GetBlackboardDef", function(this)
-        --     print('GetBlackboardDef')
-        -- end)
-        -- Observe("DataTermControllerPS", "GetFastravelDeviceType", function(this)
-        --     print('GetFastravelDeviceType')
-        -- end)
-        -- Observe("DataTermControllerPS", "GetFastravelTriggerType", function(this)
-        --     print('GetFastravelTriggerType')
-        -- end)
-        -- Observe("DataTermControllerPS", "OnFastTravelAction", function(this, evt)
-        --     print('OnFastTravelAction')
-        -- end)
-        -- Observe("DataTermControllerPS", "OnOpenWorldMapAction", function(this, evt)
-        --     print('OnOpenWorldMapAction')
-        -- end)
-        -- Observe("DataTermControllerPS", "SetLinkedFastTravelPoint", function(this, point)
-        --     print('SetLinkedFastTravelPoint')
-        -- end)
-        -- Observe("DataTermControllerPS", "ActionFastTravel", function(this, actionData)
-        --     print('ActionFastTravel')
-        -- end)
-        -- Observe("DataTermControllerPS", "ActionOpenWorldMap", function(this)
-        --     print('ActionOpenWorldMap')
-        -- end)
-        -- Observe("DataTermControllerPS", "GetFastTravelSystem", function(this)
-        --     print('GetFastTravelSystem')
-        -- end)
-        -- Observe('DataTermControllerPS', 'ActionFastTravel', function(this)
-        --     print('ActionFastTravel')
-        -- end)
-        -- Observe('DataTerm', 'TeleportToExitNode', function(this)
-        --     print('TeleportToExitNode')
-        -- end)
-        -- Observe('FastTravelSystem', 'PerformFastTravel', function(this)
-        --     print('PerformFastTravel')
-        -- end)
-        -- Observe('MenuScenario_FastTravel', 'OnEnterScenario', function(this)
-        --     print('MenuScenario_FastTravel')
-        -- end)
-        -- Observe('DataTerm', 'OnFastTravelPointsUpdated', function(this)
-        --     print('OnFastTravelPointsUpdated')
-        --     self.ft = this.linkedFastTravelPoint
-        --     self.ins = this
-        -- end)
-        -- Override("LocomotionTransition", "IsTouchingGround", function(this, script_interface, wrapped_method)
-        --     self.result = wrapped_method(script_interface)
-        --     return self.result
-        -- end)
         -- Observe("NcartMetroComponent", "OnMountingEvent", function(this, event)
         --     print(event:GetClassName().value)
         --     if event:GetClassName().value == "enteventsPhysicalCollisionEvent" then
@@ -174,13 +54,13 @@ function Debug:SetObserver()
         --         print(factName.value)
         --     end
         -- end)
-        -- Observe("QuestsSystem", "SetFact", function(this, factName, value)
-        --     if string.find(factName.value, "ue_metro") then
-        --         print('SetFact')
-        --         print(factName.value)
-        --         print(value)
-        --     end
-        -- end)
+        Observe("QuestsSystem", "SetFact", function(this, factName, value)
+            if string.find(factName.value, "ue_metro") then
+                print('SetFact')
+                print(factName.value)
+                print(value)
+            end
+        end)
     
     end
     self.is_set_observer = true
@@ -244,7 +124,11 @@ end
 function Debug:ImGuiPlayerLocalPosition()
     self.is_im_gui_player_local = ImGui.Checkbox("[ImGui] Player Local Pos", self.is_im_gui_player_local)
     if self.is_im_gui_player_local then
-        local player_pos = Game.GetPlayer():GetWorldPosition()
+        local player = Game.GetPlayer()
+        if player == nil then
+            return
+        end
+        local player_pos = player:GetWorldPosition()
         if self.core_obj.metro_obj.entity == nil or  self.core_obj.metro_obj.measurement_npc_position == nil then
             return
         end
@@ -314,19 +198,13 @@ function Debug:ImGuiMetroSpeed()
         else
             ImGui.Text("On Ground : False")
         end
-        local res2 = self.core_obj.event_obj.is_passed_e_line_final_point
-        if res2 then
-            ImGui.Text("Passed E Line Final Point : True")
-        else
-            ImGui.Text("Passed E Line Final Point : False")
-        end
     end
 end
 
 function Debug:ImGuiRistrictedArea()
     self.is_im_gui_ristrict = ImGui.Checkbox("[ImGui] Available Station", self.is_im_gui_ristrict)
     if self.is_im_gui_ristrict then
-        if self.core_obj:IsInRestrictedArea() then
+        if self.core_obj.metro_obj:IsInvalidStation() then
             ImGui.Text("In Restricted Area : True")
         else
             ImGui.Text("In Restricted Area : False")
@@ -472,7 +350,7 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF5") then
-        self.core_obj.IsInRestrictedArea()
+        print(Game.GetQuestsSystem():SetFact(CName.new("ue_metro_free_roam_get_up"), 1))
         print("Excute Test Function 5")
     end
     ImGui.SameLine()

@@ -9,7 +9,7 @@ function Metro:New()
     -- static --
     obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 9.0, y_min = -9.0, z_max = 1.6, z_min = -0.2}
     obj.default_position = Vector4.new(0, 0, 0.8, 1)
-    obj.seat_area_radius = 1.5
+    obj.seat_area_radius = 1.0
     -- dynamic --
     obj.entity = nil
     obj.entity_id = nil
@@ -20,6 +20,8 @@ function Metro:New()
     obj.world_npc_position = nil
     obj.current_speed = 0
     obj.measurement_npc_diff_yaw = 0
+    obj.next_station_num = 1
+    obj.selected_track_index = 1
     return setmetatable(obj, self)
 end
 
@@ -332,6 +334,60 @@ function Metro:TeleportToSafePosition()
     local angle = Vector4.ToRotation(self:GetWorldForward())
     Game.GetTeleportationFacility():Teleport(player, world_safe_pos, angle)
 
+end
+
+function Metro:SetLineInfo()
+
+    local quest_system = Game.GetQuestsSystem()
+    local track_num = quest_system:GetFact(CName.new("ue_metro_track_selected"))
+    local next_station_num = quest_system:GetFact(CName.new("ue_metro_next_station"))
+    self.selected_track_index = track_num
+    if next_station_num ~= 0 then
+        self.next_station_num = next_station_num
+    end
+
+end
+
+function Metro:GetTrackList(station_num)
+    return Data.Station[station_num].track_info
+end
+
+function Metro:IsInvalidStation()
+
+    local track_list = self:GetTrackList(self.next_station_num)
+    for _, track_info in pairs(track_list) do
+        if track_info.track == self.selected_track_index then
+            return track_info.is_invalid
+        end
+    end
+    return true
+
+end
+
+function Metro:IsFinalStation()
+
+    local track_list = self:GetTrackList(self.next_station_num)
+    for _, track_info in pairs(track_list) do
+        if track_info.track == self.selected_track_index then
+            return track_info.is_final
+        end
+    end
+    return true
+
+end
+
+function Metro:IsInStation()
+
+    if self.next_station_num == self:GetActiveStation() then
+        return true
+    else
+        return false
+    end
+
+end
+
+function Metro:GetActiveStation()
+    return Game.GetQuestsSystem():GetFact(CName.new("ue_metro_active_station"))
 end
 
 return Metro
