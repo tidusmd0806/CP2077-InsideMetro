@@ -189,4 +189,9 @@ function HUD:HideChoice()
 
 end
 
+function HUD:ShowDangerWarning()
+    local text = GetLocalizedText("LocKey#49558")
+    GameHUD.ShowWarning(text, 0.5)
+end
+
 return HUD

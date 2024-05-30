@@ -42,26 +42,26 @@ function Debug:SetObserver()
 
     if not self.is_set_observer then
         -- reserved
-        -- Observe("NcartMetroComponent", "OnMountingEvent", function(this, event)
-        --     print(event:GetClassName().value)
-        --     if event:GetClassName().value == "enteventsPhysicalCollisionEvent" then
-        --         print("collision")
+        -- Observe("UISystem", "QueueEvent", function(this, evt)
+        --     local evt_name =  evt:ToString()
+        --     if string.find(evt_name, "InputHint") then
+        --         print('QueueEvent')
+        --         print(evt_name)
+        --         if string.find(evt_name, "Delete") then
+        --             print(evt.source.value)
+        --         elseif string.find(evt_name, "Update") then
+        --             print(evt.data.source.value)
+        --             print(evt.targetHintContainer.value)
+        --         end
         --     end
         -- end)
-        -- Observe("QuestsSystem", "GetFact", function(this, factName)
+        -- Observe("QuestsSystem", "SetFact", function(this, factName, value)
         --     if string.find(factName.value, "ue_metro") then
-        --         print('GetFact')
+        --         print('SetFact')
         --         print(factName.value)
+        --         print(value)
         --     end
         -- end)
-        Observe("QuestsSystem", "SetFact", function(this, factName, value)
-            if string.find(factName.value, "ue_metro") then
-                print('SetFact')
-                print(factName.value)
-                print(value)
-            end
-        end)
-    
     end
     self.is_set_observer = true
 
@@ -202,12 +202,29 @@ function Debug:ImGuiMetroSpeed()
 end
 
 function Debug:ImGuiRistrictedArea()
-    self.is_im_gui_ristrict = ImGui.Checkbox("[ImGui] Available Station", self.is_im_gui_ristrict)
+    self.is_im_gui_ristrict = ImGui.Checkbox("[ImGui] Station", self.is_im_gui_ristrict)
     if self.is_im_gui_ristrict then
-        if self.core_obj.metro_obj:IsInvalidStation() then
-            ImGui.Text("In Restricted Area : True")
+        local next_station_num = self.core_obj.metro_obj.next_station_num
+        ImGui.Text("Next Station : " .. next_station_num)
+        if self.core_obj.metro_obj:IsNextInvalidStation() then
+            ImGui.Text("Next Invalid : True")
         else
-            ImGui.Text("In Restricted Area : False")
+            ImGui.Text("Next Invalid : False")
+        end
+        if self.core_obj.metro_obj:IsNextFinalStation() then
+            ImGui.Text("Next Final : True")
+        else
+            ImGui.Text("Next Final : False")
+        end
+        if self.core_obj.metro_obj:IsInStation() then
+            ImGui.Text("In Station : True")
+        else
+            ImGui.Text("In Station : False")
+        end
+        if self.core_obj.metro_obj:IsCurrentInvalidStation() then
+            ImGui.Text("Current Invalid : True")
+        else
+            ImGui.Text("Current Invalid : False")
         end
     end
 end
@@ -267,7 +284,6 @@ function Debug:ImGuiExcuteFunction()
         for _, point in ipairs(arr) do
             local pointID = tostring(point.pointRecord.value)
             if string.find(pointID, 'wat_lch_metro_ftp_02', 1, true) then
-                print("aaa")
                 pointData = point
                 break
             end
@@ -288,62 +304,14 @@ function Debug:ImGuiExcuteFunction()
     end
     ImGui.SameLine()
     if ImGui.Button("TF3") then
-        local entity = Game.GetPlayer()
-        local component = entColliderComponent.new()
-        component.name = "collider"
-        local actor = physicsColliderBox.new()
-        -- local actor
-        -- local color = colors[settings.colliderColor + 1]
-
-        -- if self.shape == 0 then
-        --     actor = physicsColliderBox.new()
-        --     actor.halfExtents = ToVector3(self.extents)
-        --     visualizer.addBox(entity, self.extents, color)
-        -- elseif self.shape == 1 then
-        --     actor = physicsColliderCapsule.new()
-        --     actor.height = self.height
-        --     actor.radius = self.radius
-        --     visualizer.addCapsule(entity, self.radius, self.height, color)
-        -- elseif self.shape == 2 then
-        --     actor = physicsColliderSphere.new()
-        --     actor.radius = self.radius
-        --     visualizer.addSphere(entity, self.radius, color)
-        -- end
-
-        actor.material = "concrete.physmat"
-
-        component.colliders = { actor }
-
-        local filterData = physicsFilterData.new()
-        filterData.preset = self.preset
-
-        local query = physicsQueryFilter.new()
-        query.mask1 = 0
-        query.mask2 = 0
-
-        local sim = physicsSimulationFilter.new()
-        sim.mask1 = 0
-        sim.mask2 = 0
-
-        filterData.queryFilter = query
-        filterData.simulationFilter = sim
-        component.filterData = filterData
-
-        entity:AddComponent(component)
+        local event = gameuiDeleteInputHintBySourceEvent.new()
+        event.source = CName.new("UI_DPad")
+        event.targetHintContainer = CName.new("GameplayInputHelper")
+        Game.GetUISystem():QueueEvent(event)
         print("Excute Test Function 3")
     end
     ImGui.SameLine()
     if ImGui.Button("TF4") then
-        -- local sys = Game.GetPlayer():GetFastTravelSystem()
-        -- local ft_point = RegisterFastTravelPointsRequest.new()
-        -- ft_point.forceRefreshUI = true
-        -- ft_point.isEnabled = true
-        -- ft_point.reason = CName.new("InVehicle")
-        -- local ft_enable = EnableFastTravelRequest.new()
-        -- sys:QueueRequest(ft_enable)
-        -- local questsSystem = Game.GetQuestsSystem()
-        -- local factMetroStationNext = CName.new("ue_metro_next_station")
-        -- local metroStationNextListenerId = questsSystem.RegisterListener(factMetroStationNext, this, n"OnMetroStationNextChange");
         local system = Game.GetQuestsSystem()
         system:SetFact(CName.new("ue_metro_next_station"), 1) 
         print("Excute Test Function 4")

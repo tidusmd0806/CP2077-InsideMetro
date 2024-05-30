@@ -7,6 +7,7 @@
 Cron = require('External/Cron.lua')
 Data = require("Tools/data.lua")
 Def = require('Tools/def.lua')
+GameHUD = require('External/GameHUD.lua')
 GameUI = require('External/GameUI.lua')
 Log = require("Tools/log.lua")
 
@@ -15,8 +16,8 @@ local Debug = require('Debug/debug.lua')
 
 InsideMetro = {
 	description = "Inside The Metro",
-	version = "0.0.4",
-    is_debug_mode = true,
+	version = "0.1.0",
+    is_debug_mode = false,
     is_avoidance_mode = false,
     -- version check
     cet_required_version = 32.2, -- 1.32.2

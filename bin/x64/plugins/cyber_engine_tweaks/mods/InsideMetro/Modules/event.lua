@@ -20,9 +20,11 @@ function Event:New(player_obj, metro_obj)
     obj.is_initial = false
     obj.is_ready = false
     obj.is_invisible_collision = false
-    obj.is_passed_e_line_final_point = false
     obj.is_first_standing = false
     obj.standing_y_offset = 0
+    obj.is_in_menu = false
+    obj.is_in_popup = false
+    obj.is_in_photo = false
     return setmetatable(obj, self)
 end
 
@@ -40,7 +42,8 @@ function Event:Uninitialize()
     self.is_initial = false
     self.is_ready = false
     self.is_invisible_collision = false
-    self.is_passed_e_line_final_point = false
+    self.is_first_standing = false
+    self.standing_y_offset = 0
     self.player_obj:DeleteWorkspot()
     self.current_status = Def.State.OutsideMetro
 
@@ -55,6 +58,30 @@ function Event:SetGameUIObserver()
     GameUI.Observe("SessionEnd", function()
         self.log_obj:Record(LogLevel.Info, "Session end detected")
         self:Uninitialize()
+    end)
+
+    GameUI.Observe("MenuOpen", function()
+        self.is_in_menu = true
+    end)
+
+    GameUI.Observe("MenuClose", function()
+        self.is_in_menu = false
+    end)
+
+    GameUI.Observe("PopupOpen", function()
+        self.is_in_popup = true
+    end)
+
+    GameUI.Observe("PopupClose", function()
+        self.is_in_popup = false
+    end)
+
+    GameUI.Observe("PhotoModeOpen", function()
+        self.is_in_photo = true
+    end)
+
+    GameUI.Observe("PhotoModeClose", function()
+        self.is_in_photo = false
     end)
 
 end
@@ -128,7 +155,7 @@ function Event:SetStatus(status)
         self.log_obj:Record(LogLevel.Info, "Change Status from SitInsideMetro to EnableStand")
         self.current_status = Def.State.EnableStand
         self.hud_obj:HideChoice()
-        if not self.metro_obj:IsInvalidStation() then
+        if not self.metro_obj:IsCurrentInvalidStation() then
             self.hud_obj:ShowChoice(Def.ChoiceVariation.Stand, 1)
         end
         return true
@@ -136,7 +163,6 @@ function Event:SetStatus(status)
         self.log_obj:Record(LogLevel.Info, "Change Status from SitInsideMetro to WalkInsideMetro")
         self.current_status = Def.State.WalkInsideMetro
         self.hud_obj:HideChoice()
-        self.standing_y_offset = 0
         return true
     elseif self.current_status == Def.State.EnableStand and status == Def.State.WalkInsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status from EnableStand to WalkInsideMetro")
@@ -212,20 +238,31 @@ function Event:CheckAllEvents()
         self:CheckNextStation()
     elseif self.current_status == Def.State.EnableStand then
         self:CheckEnableStand()
+        self:CheckNextStation()
     elseif self.current_status == Def.State.EnableSit then
         self:CheckEnableSit()
         self:CheckInvalidPosition()
         self:CheckTouchGround()
         self:CheckRestrictedArea()
+        self:CheckNextStation()
     elseif self.current_status == Def.State.WalkInsideMetro then
         self:CheckEnableSit()
         self:CheckInvalidPosition()
         self:CheckTouchGround()
         self:CheckRestrictedArea()
+        self:CheckNextStation()
     elseif self.current_status == Def.State.Invalid then
         self:CheckGetOff()
     end
 
+end
+
+function Event:IsInPouse()
+    if self.is_in_menu or self.is_in_popup or self.is_in_photo then
+        return true
+    else
+        return false
+    end
 end
 
 function Event:IsInMetro()
@@ -283,7 +320,7 @@ end
 
 function Event:CheckOutsideMetro()
     -- need to add another check
-    if not self.metro_obj:IsMountedPlayer() then
+    if not self.metro_obj:IsMountedPlayer() and not InsideMetro.core_obj.is_switching_pose then
         self.log_obj:Record(LogLevel.Info, "Detect Outside Metro")
         self:SetStatus(Def.State.OutsideMetro)
         self.metro_obj:Uninitialize()
@@ -314,6 +351,8 @@ function Event:CheckEnableStand()
     if self.is_first_standing then
         self.standing_y_offset = 1.5 * self.metro_obj:GetSpeed() / 43
         return
+    else
+        self.standing_y_offset = 0
     end
 
     local is_invalid = false
@@ -387,10 +426,11 @@ function Event:CheckRestrictedArea()
         self.log_obj:Record(LogLevel.Info, "Player is passed Restricted Border")
         InsideMetro.is_avoidance_mode = false
         InsideMetro.core_obj:DisableWalkingMetro()
+        self.hud_obj:ShowDangerWarning()
         return
     end
 
-    if self.metro_obj:IsFinalStation() and self.metro_obj:IsInStation() then
+    if self.metro_obj:IsNextFinalStation() and self.metro_obj:IsInStation() then
         self.log_obj:Record(LogLevel.Info, "Player is in Final Station")
         InsideMetro.is_avoidance_mode = false
         InsideMetro.core_obj:DisableWalkingMetro()
@@ -407,11 +447,10 @@ function Event:CheckTouchGround()
     if not self.metro_obj:IsInMetro(local_player_pos) then
         return
     end
-    local search_pos_1 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,8,0.5,1))
-    local search_pos_2 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,-8,1,1))
+    local search_pos_1 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,7,0.2,1))
+    local search_pos_2 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,-7,0.2,1))
     local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(search_pos_1, search_pos_2, "Static", false, false)
     if res then
-        -- if trace.material.value == "concrete.physmat" and not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
         if not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
             self.log_obj:Record(LogLevel.Trace, "Touch Concrete")
             InsideMetro.is_avoidance_mode = true
@@ -421,6 +460,11 @@ function Event:CheckTouchGround()
     InsideMetro.is_avoidance_mode = false
     if self.is_on_ground then
         self.prev_player_local_pos = local_player_pos
+        if self.prev_player_local_pos.y < -7 then
+            self.log_obj:Record(LogLevel.Trace, "Is too back position")
+            self.prev_player_local_pos.y = -6
+            self.prev_player_local_pos.x = 0
+        end
         return
     end
     self.log_obj:Record(LogLevel.Trace, "Is not touching ground")

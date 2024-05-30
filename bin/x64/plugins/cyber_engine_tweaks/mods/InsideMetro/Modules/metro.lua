@@ -41,6 +41,8 @@ function Metro:Uninitialize()
     self.world_npc_position = nil
     self.current_speed = 0
     self.measurement_npc_diff_yaw = 0
+    self.next_station_num = 1
+    self.selected_track_index = 1
 end
 
 function Metro:SetEntity()
@@ -352,7 +354,19 @@ function Metro:GetTrackList(station_num)
     return Data.Station[station_num].track_info
 end
 
-function Metro:IsInvalidStation()
+function Metro:IsCurrentInvalidStation()
+
+    local track_list = self:GetTrackList(self:GetActiveStation())
+    for _, track_info in pairs(track_list) do
+        if track_info.track == self.selected_track_index then
+            return track_info.is_invalid
+        end
+    end
+    return true
+
+end
+
+function Metro:IsNextInvalidStation()
 
     local track_list = self:GetTrackList(self.next_station_num)
     for _, track_info in pairs(track_list) do
@@ -364,7 +378,7 @@ function Metro:IsInvalidStation()
 
 end
 
-function Metro:IsFinalStation()
+function Metro:IsNextFinalStation()
 
     local track_list = self:GetTrackList(self.next_station_num)
     for _, track_info in pairs(track_list) do

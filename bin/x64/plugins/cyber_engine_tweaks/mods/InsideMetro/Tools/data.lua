@@ -12,7 +12,7 @@ Data.Station = {
     {station = "DOWNTOWN_NORTH", track_info = {{track = 1, is_final = false, is_invalid = false}, {track = 2, is_final = false, is_invalid = false}, {track = 5, is_final = false, is_invalid = false}}},
     {station = "ARROYO", track_info = {{track = 1, is_final = false, is_invalid = false}, {track = 3, is_final = false, is_invalid = false}}},
     {station = "CITY_CENTER", track_info = {{track = 1, is_final = false, is_invalid = false}, {track = 4, is_final = false, is_invalid = false}, {track = 5, is_final = false, is_invalid = false}}},
-    {station = "ARASAKA_TOWER", track_info = {{track = 1, is_final = false, is_invalid = false}, {track = 3, is_final = true, is_invalid = false}, {track = 4, is_final = true, is_invalid = false}}},
+    {station = "ARASAKA_TOWER", track_info = {{track = 1, is_final = false, is_invalid = false}, {track = 3, is_final = true, is_invalid = false}, {track = 4, is_final = false, is_invalid = false}}},
     {station = "WELLSPRINGS", track_info = {{track = 4, is_final = false, is_invalid = false}, {track = 5, is_final = false, is_invalid = false}}},
     {station = "GLEN_NORTH", track_info = {{track = 2, is_final = false, is_invalid = false}, {track = 4, is_final = false, is_invalid = false}}},
     {station = "GLEN_SOUTH", track_info = {{track = 4, is_final = false, is_invalid = false}, {track = 5, is_final = false, is_invalid = false}}},
