@@ -1,0 +1,190 @@
+streaming:
+  sectors:
+    # c line
+    # rainbow
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-12_-10_0_0.streamingsector
+      expectedNodes: 105
+      nodeDeletions:
+        - index: 104
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-6_-5_0_1.streamingsector
+      expectedNodes: 416
+      nodeDeletions:
+        - index: 405
+          type: worldCollisionNode
+        - index: 413
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-3_-3_0_2.streamingsector
+      expectedNodes: 1014
+      nodeDeletions:
+        - index: 983
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-7_-5_0_1.streamingsector
+      expectedNodes: 1484
+      nodeDeletions:
+        - index: 1468
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-4_-2_0_2.streamingsector
+      expectedNodes: 4268
+      nodeDeletions:
+        - index: 4093
+          type: worldCollisionNode
+        - index: 4156
+          type: worldCollisionNode
+        - index: 4160
+          type: worldCollisionNode
+        - index: 4179
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-8_-4_0_1.streamingsector
+      expectedNodes: 1235
+      nodeDeletions:
+        - index: 1187
+          type: worldCollisionNode
+        - index: 1218
+          type: worldCollisionNode
+        - index: 1230
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-9_-3_0_1.streamingsector
+      expectedNodes: 1638
+      nodeDeletions:
+        - index: 1608
+          type: worldCollisionNode
+    # d line
+    # memorial park
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-2_-1_0_4.streamingsector
+      expectedNodes: 1774
+      nodeDeletions:
+        - index: 1762
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-3_-1_0_3.streamingsector
+      expectedNodes: 2207
+      nodeDeletions:
+        - index: 2127
+          type: worldCollisionNode
+        - index: 2170
+          type: worldCollisionNode
+        - index: 2171
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-3_0_0_3.streamingsector
+      expectedNodes: 2276
+      nodeDeletions:
+        - index: 2133
+          type: worldCollisionNode
+        - index: 2156
+          type: worldCollisionNode
+        - index: 2157
+          type: worldCollisionNode
+        - index: 2188
+          type: worldCollisionNode
+        - index: 2189
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-5_0_0_2.streamingsector
+      expectedNodes: 3350
+      nodeDeletions:
+        - index: 3336
+          type: worldCollisionNode
+        - index: 3339
+          type: worldCollisionNode
+   # watson
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-3_1_0_3.streamingsector
+      expectedNodes: 1062
+      nodeDeletions:
+        - index: 689
+          type: worldCollisionNode
+        - index: 690
+          type: worldCollisionNode
+        - index: 693
+          type: worldCollisionNode
+        - index: 699
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-6_4_0_2.streamingsector
+      expectedNodes: 3648
+      nodeDeletions:
+        - index: 3470
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-3_2_0_3.streamingsector
+      expectedNodes: 2043
+      nodeDeletions:
+        - index: 1926
+          type: worldCollisionNode
+        - index: 1940
+          type: worldCollisionNode
+        - index: 1945
+          type: worldCollisionNode
+        - index: 1949
+          type: worldCollisionNode
+        - index: 1950
+          type: worldCollisionNode
+        - index: 1937
+          type: worldCollisionNode
+        - index: 1956
+          type: worldCollisionNode
+        - index: 1957
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-6_5_0_2.streamingsector
+      expectedNodes: 2044
+      nodeDeletions:
+        - index: 1983
+          type: worldCollisionNode
+        - index: 2016
+          type: worldCollisionNode
+    # westbrook
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-2_2_0_3.streamingsector
+      expectedNodes: 1511
+      nodeDeletions:
+        - index: 1262
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-1_2_0_3.streamingsector
+      expectedNodes: 1509
+      nodeDeletions:
+        - index: 1483
+          type: worldCollisionNode
+    # heywood
+    # - path: base\worlds\03_night_city\_compiled\default\exterior_-5_-2_0_2.streamingsector
+    #   expectedNodes: 3562
+    #   nodeDeletions:
+    #     - index: 3559
+    #       type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-3_-2_0_3.streamingsector
+      expectedNodes: 1725
+      nodeDeletions:
+        - index: 1687
+          type: worldCollisionNode
+        - index: 1693
+          type: worldCollisionNode
+        - index: 1703
+          type: worldCollisionNode
+        - index: 1709
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-4_-2_0_3.streamingsector
+      expectedNodes: 1527
+      nodeDeletions:
+        - index: 1508
+          type: worldCollisionNode
+        - index: 1514
+          type: worldCollisionNode
+    # A line
+    # watson
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-5_1_0_3.streamingsector
+      expectedNodes: 166
+      nodeDeletions:
+        - index: 151
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-4_2_0_3.streamingsector
+      expectedNodes: 2000
+      nodeDeletions:
+        - index: 1898
+          type: worldCollisionNode
+        - index: 1915
+          type: worldCollisionNode
+        - index: 1924
+          type: worldCollisionNode
+        - index: 1927
+          type: worldCollisionNode
+        - index: 1938
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-7_4_0_2.streamingsector
+      expectedNodes: 2991
+      nodeDeletions:
+        - index: 2877
+          type: worldCollisionNode

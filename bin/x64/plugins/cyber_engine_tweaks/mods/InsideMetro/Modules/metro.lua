@@ -351,12 +351,19 @@ function Metro:SetLineInfo()
 end
 
 function Metro:GetTrackList(station_num)
-    return Data.Station[station_num].track_info
+    if station_num == 0 then
+        return nil
+    else
+        return Data.Station[station_num].track_info
+    end
 end
 
 function Metro:IsCurrentInvalidStation()
 
     local track_list = self:GetTrackList(self:GetActiveStation())
+    if track_list == nil then
+        return true
+    end
     for _, track_info in pairs(track_list) do
         if track_info.track == self.selected_track_index then
             return track_info.is_invalid
@@ -369,6 +376,9 @@ end
 function Metro:IsNextInvalidStation()
 
     local track_list = self:GetTrackList(self.next_station_num)
+    if track_list == nil then
+        return true
+    end
     for _, track_info in pairs(track_list) do
         if track_info.track == self.selected_track_index then
             return track_info.is_invalid
@@ -381,6 +391,9 @@ end
 function Metro:IsNextFinalStation()
 
     local track_list = self:GetTrackList(self.next_station_num)
+    if track_list == nil then
+        return true
+    end
     for _, track_info in pairs(track_list) do
         if track_info.track == self.selected_track_index then
             return track_info.is_final

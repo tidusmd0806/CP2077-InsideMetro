@@ -334,6 +334,9 @@ function Event:CheckEnableStand()
         if self.metro_obj:GetSpeed() >= 0.001 then
             self.is_ready = true
             local active_station = self.metro_obj:GetActiveStation()
+            if active_station == nil then
+                return
+            end
             for _, track_info in ipairs(self.metro_obj:GetTrackList(active_station)) do
                 if track_info.track == self.metro_obj.selected_track_index then
                     if not track_info.is_invalid then
@@ -358,6 +361,9 @@ function Event:CheckEnableStand()
     local is_invalid = false
     local is_final = false
 
+    if self.metro_obj.next_station_num == 0 then
+        return
+    end
     for _, track_info in ipairs(self.metro_obj:GetTrackList(self.metro_obj.next_station_num)) do
         if track_info.track == self.metro_obj.selected_track_index then
             is_invalid = track_info.is_invalid
