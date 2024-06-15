@@ -7,11 +7,10 @@ function Metro:New()
     obj.log_obj = Log:New()
     obj.log_obj:SetLevel(LogLevel.Info, "Metro")
     -- static --
-    obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 10.0, y_min = -10.0, z_max = 3.5, z_min = -1.0}
-    obj.default_position = Vector4.new(0, 0, 1, 1)
-    obj.seat_area_radius = 2.0
+    obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 9.0, y_min = -9.0, z_max = 1.6, z_min = -0.2}
+    obj.default_position = Vector4.new(0, 0, 0.8, 1)
+    obj.seat_area_radius = 1.0
     -- dynamic --
-    obj.is_ready = false
     obj.entity = nil
     obj.entity_id = nil
     obj.is_mounted_player = true
@@ -20,17 +19,30 @@ function Metro:New()
     obj.measurement_npc_position = nil
     obj.world_npc_position = nil
     obj.current_speed = 0
+    obj.measurement_npc_diff_yaw = 0
+    obj.next_station_num = 1
+    obj.selected_track_index = 1
     return setmetatable(obj, self)
 end
 
 function Metro:Initialize()
-    self.is_ready = true
+    self:SetEntity()
     self:SetNPCForMeasurement()
     self:SetSpeedObserver()
 end
 
 function Metro:Uninitialize()
-    self.is_ready = false
+    self.entity = nil
+    self.entity_id = nil
+    self.is_mounted_player = true
+    self.player_seat_position = nil
+    self.is_player_seat_right_side = true
+    self.measurement_npc_position = nil
+    self.world_npc_position = nil
+    self.current_speed = 0
+    self.measurement_npc_diff_yaw = 0
+    self.next_station_num = 1
+    self.selected_track_index = 1
 end
 
 function Metro:SetEntity()
@@ -46,34 +58,46 @@ function Metro:SetEntity()
         self.entity_id = self.entity:GetEntityID()
         return true
     else
-        self.entity = nil
-        self.entity_id = nil
         return false
     end
 end
 
 function Metro:IsMountedPlayer()
-    return self.is_mounted_player
+    local entity = GetMountedVehicle(Game.GetPlayer())
+    if entity == nil then
+        return false
+    elseif self.entity == entity and self.entity_id == entity:GetEntityID() then
+        return true
+    elseif entity:GetClassName().value == "ncartMetroObject" then
+        return true
+    else
+        return false
+    end
 end
 
 function Metro:GetWorldPosition()
-    return self.entity:GetWorldPosition()
+    local vec4 = self.entity:GetWorldPosition()
+    return Vector4.new(vec4.x, vec4.y, vec4.z, vec4.w)
 end
 
 function Metro:GetWorldOrientation()
-    return self.entity:GetWorldOrientation()
+    local quat = self.entity:GetWorldOrientation()
+    return Quaternion.new(quat.i, quat.j, quat.k, quat.r)
 end
 
 function Metro:GetWorldRight()
-    return self.entity:GetWorldRight()
+    local vec4 = self.entity:GetWorldRight()
+    return Vector4.new(vec4.x, vec4.y, vec4.z, vec4.w)
 end
 
 function Metro:GetWorldForward()
-    return self.entity:GetWorldForward()
+    local vec4 = self.entity:GetWorldForward()
+    return Vector4.new(vec4.x, vec4.y, vec4.z, vec4.w)
 end
 
 function Metro:GetWorldUp()
-    return self.entity:GetWorldUp()
+    local vec4 = self.entity:GetWorldUp()
+    return Vector4.new(vec4.x, vec4.y, vec4.z, vec4.w)
 end
 
 function Metro:ChangeWorldPosToLocal(world_pos)
@@ -107,9 +131,7 @@ function Metro:ChangeLocalPosToWorld(local_pos)
     local x = Vector4.new(right.x * local_pos.x, right.y * local_pos.x, right.z * local_pos.x, 0)
     local y = Vector4.new(forward.x * local_pos.y, forward.y * local_pos.y, forward.z * local_pos.y, 0)
     local z = Vector4.new(up.x * local_pos.z, up.y * local_pos.z, up.z * local_pos.z, 0)
-    local world_pos = Vector4.new(x.x + y.x + z.x + origin.x, x.y + y.y + z.y + origin.y, x.z + y.z + z.z + origin.z, 1)
-    return world_pos
-
+    return Vector4.new(x.x + y.x + z.x + origin.x, x.y + y.y + z.y + origin.y, x.z + y.z + z.z + origin.z, 1)
 end
 
 function Metro:IsInMetro(local_pos)
@@ -152,16 +174,22 @@ function Metro:SetNPCForMeasurement()
     end
     self.measurement_npc_position = self:ChangeWorldPosToLocal(npcs[min_index]:GetWorldPosition())
     self.measurement_npc_entity = npcs[min_index]
+    self.measurement_npc_diff_yaw = Vector4.GetAngleBetween(self.measurement_npc_entity:GetWorldForward(), self:GetWorldForward())
+end
 
+function Metro:GetNPCWorldPosition()
+    local vec4 = self.measurement_npc_entity:GetWorldPosition()
+    return Vector4.new(vec4.x, vec4.y, vec4.z, vec4.w)
 end
 
 function Metro:GetPlayerSeatPosition()
-    return self.player_seat_position
+    return Vector4.new(self.player_seat_position.x, self.player_seat_position.y, self.player_seat_position.z, 1)
 end
 
 function Metro:SetPlayerSeatPosition()
 
-    self.player_seat_position = self:ChangeWorldPosToLocal(Game.GetPlayer():GetWorldPosition())
+    self.log_obj:Record(LogLevel.Trace, "SetPlayerSeatPosition")
+    self.player_seat_position = self:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
     if self.player_seat_position.x > 0 then
         self.is_player_seat_right_side = true
     else
@@ -179,7 +207,7 @@ function Metro:GetAccurateLocalPosition(world_pos)
     if self.measurement_npc_entity == nil then
         return nil
     end
-    local world_npc_pos = self.measurement_npc_entity:GetWorldPosition()
+    local world_npc_pos = self:GetNPCWorldPosition()
     local world_metro_pos = self:GetWorldPosition()
     local vector_from_p_to_n = Vector4.new(world_pos.x - world_npc_pos.x, world_pos.y - world_npc_pos.y, world_pos.z - world_npc_pos.z, 1)
     local world_direction = Vector4.new(world_metro_pos.x + vector_from_p_to_n.x, world_metro_pos.y + vector_from_p_to_n.y, world_metro_pos.z + vector_from_p_to_n.z, 1)
@@ -199,7 +227,7 @@ function Metro:GetAccurateWorldPosition(local_pos)
     local world_npc_pos = self:ChangeLocalPosToWorld(self.measurement_npc_position)
     local world_pos = self:ChangeLocalPosToWorld(local_pos)
     local vector_from_p_to_n = Vector4.new(world_pos.x - world_npc_pos.x, world_pos.y - world_npc_pos.y, world_pos.z - world_npc_pos.z, 1)
-    local actual_npc_pos = self.measurement_npc_entity:GetWorldPosition()
+    local actual_npc_pos = self:GetNPCWorldPosition()
 
     return Vector4.new(actual_npc_pos.x + vector_from_p_to_n.x, actual_npc_pos.y + vector_from_p_to_n.y, actual_npc_pos.z + vector_from_p_to_n.z, 1)
 
@@ -209,19 +237,26 @@ function Metro:SetSpeedObserver()
 
     Cron.Every(0.01, {tick = 1}, function(timer)
         timer.tick = timer.tick + 1
-        if self.measurement_npc_entity == nil then
-            return
-        elseif self.world_npc_position == nil then
-            self.world_npc_position = self.measurement_npc_entity:GetWorldPosition()
+        if self.entity == nil then
             return
         end
-        local current_pos = self.measurement_npc_entity:GetWorldPosition()
-        local distance = Vector4.Distance(current_pos, self.world_npc_position)
-        self.current_speed = distance / 0.01
-        self.world_npc_position = current_pos
-        if not self.is_ready then
-            Cron.Helt(timer)
-        end
+        Cron.Every(0.01, {tick = 1}, function(timer_)
+            timer_.tick = timer_.tick + 1
+            if self.entity == nil then
+                Cron.Halt(timer_)
+                return
+            elseif self.measurement_npc_entity == nil then
+                return
+            elseif self.world_npc_position == nil then
+                self.world_npc_position = self:GetNPCWorldPosition()
+                return
+            end
+            local current_pos = self:GetNPCWorldPosition()
+            local distance = Vector4.Distance(current_pos, self.world_npc_position)
+            self.current_speed = distance / 0.01
+            self.world_npc_position = current_pos
+        end)
+        Cron.Halt(timer)
     end)
 
 end
@@ -241,7 +276,7 @@ function Metro:Unmount()
     data.isInstant = true
     data.slotName = seat
     data.mountParentEntityId = self.entity_id
-    data.entryAnimName = "forcedTransition"
+    data.allowFailsafeTeleport = true
 
     local slotID = NewObject('gamemountingMountingSlotId')
     slotID.id = seat
@@ -267,9 +302,10 @@ function Metro:Mount()
     local ent_id = self.entity_id
     local seat = "Passengers"
     local data = NewObject('handle:gameMountEventData')
-    data.isInstant = false
+    data.isInstant = true
     data.slotName = seat
     data.mountParentEntityId = ent_id
+    data.allowFailsafeTeleport = true
 
     local slot_id = NewObject('gamemountingMountingSlotId')
     slot_id.id = seat
@@ -289,18 +325,83 @@ function Metro:Mount()
 
 end
 
-function Metro:TeleportToDefaultPosition()
+function Metro:TeleportToSafePosition()
 
-    local world_default_pos = self:GetAccurateWorldPosition(self.default_position)
-    if world_default_pos == nil then
-        self.log_obj:Record(LogLevel.Critical, "TeleportToDefaultPosition: world_default_pos is nil")
+    local world_safe_pos = self:GetAccurateWorldPosition(self.default_position)
+    if world_safe_pos == nil then
+        self.log_obj:Record(LogLevel.Critical, "TeleportToSafePosition: safe_pos is nil")
         return
     end
-    world_default_pos.z = self.measurement_npc_entity:GetWorldPosition().z
     local player = Game.GetPlayer()
     local angle = Vector4.ToRotation(self:GetWorldForward())
-    Game.GetTeleportationFacility():Teleport(player, world_default_pos, angle)
+    Game.GetTeleportationFacility():Teleport(player, world_safe_pos, angle)
 
+end
+
+function Metro:SetLineInfo()
+
+    local quest_system = Game.GetQuestsSystem()
+    local track_num = quest_system:GetFact(CName.new("ue_metro_track_selected"))
+    local next_station_num = quest_system:GetFact(CName.new("ue_metro_next_station"))
+    self.selected_track_index = track_num
+    if next_station_num ~= 0 then
+        self.next_station_num = next_station_num
+    end
+
+end
+
+function Metro:GetTrackList(station_num)
+    return Data.Station[station_num].track_info
+end
+
+function Metro:IsCurrentInvalidStation()
+
+    local track_list = self:GetTrackList(self:GetActiveStation())
+    for _, track_info in pairs(track_list) do
+        if track_info.track == self.selected_track_index then
+            return track_info.is_invalid
+        end
+    end
+    return true
+
+end
+
+function Metro:IsNextInvalidStation()
+
+    local track_list = self:GetTrackList(self.next_station_num)
+    for _, track_info in pairs(track_list) do
+        if track_info.track == self.selected_track_index then
+            return track_info.is_invalid
+        end
+    end
+    return true
+
+end
+
+function Metro:IsNextFinalStation()
+
+    local track_list = self:GetTrackList(self.next_station_num)
+    for _, track_info in pairs(track_list) do
+        if track_info.track == self.selected_track_index then
+            return track_info.is_final
+        end
+    end
+    return true
+
+end
+
+function Metro:IsInStation()
+
+    if self.next_station_num == self:GetActiveStation() then
+        return true
+    else
+        return false
+    end
+
+end
+
+function Metro:GetActiveStation()
+    return Game.GetQuestsSystem():GetFact(CName.new("ue_metro_active_station"))
 end
 
 return Metro

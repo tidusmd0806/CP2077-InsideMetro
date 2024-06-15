@@ -1,4 +1,3 @@
-local Utils = require("Tools/utils.lua")
 local Debug = {}
 Debug.__index = Debug
 
@@ -7,34 +6,32 @@ function Debug:New(core_obj)
     obj.core_obj = core_obj
 
     -- set parameters
-    obj.is_im_gui_rw_count = false
     obj.is_im_gui_check_status = false
-    obj.is_im_gui_check_anim = false
     obj.is_im_gui_player_local = false
     obj.is_im_gui_seat_position = false
     obj.is_im_gui_metro_speed = false
     obj.is_set_observer = false
+    obj.is_im_gui_line_info = false
     obj.is_im_gui_measurement = false
-    self.input_text_1 = ""
-    obj.switch = false
+    obj.is_im_gui_ristrict = false
     return setmetatable(obj, self)
 end
 
 function Debug:ImGuiMain()
 
-    ImGui.Begin("ITM DEBUG WINDOW")
+    ImGui.Begin("InsideMetro DEBUG WINDOW")
     ImGui.Text("Debug Mode : On")
 
     self:SetObserver()
     self:SetLogLevel()
     self:SelectPrintDebug()
-    self:ImGuiShowRWCount()
     self:ImGuiCheckStatus()
     self:ImGuiPlayerLocalPosition()
     self:ImGuiSeatPosition()
     self:ImGuiMetroSpeed()
+    self:ImGuiRistrictedArea()
+    self:ImGuiLineInfo()
     self:ImGuiMeasurement()
-    self:ImGuiCheckAnim()
     self:ImGuiExcuteFunction()
 
     ImGui.End()
@@ -45,23 +42,25 @@ function Debug:SetObserver()
 
     if not self.is_set_observer then
         -- reserved
-        -- Observe('DataTerm', 'OpenSubwayGate', function(this)
-        --     print('OpenSubwayGate')
+        -- Observe("UISystem", "QueueEvent", function(this, evt)
+        --     local evt_name =  evt:ToString()
+        --     if string.find(evt_name, "InputHint") then
+        --         print('QueueEvent')
+        --         print(evt_name)
+        --         if string.find(evt_name, "Delete") then
+        --             print(evt.source.value)
+        --         elseif string.find(evt_name, "Update") then
+        --             print(evt.data.source.value)
+        --             print(evt.targetHintContainer.value)
+        --         end
+        --     end
         -- end)
-        -- Observe('gamehelperGameObjectEffectHelper', 'ActivateEffectAction', function(this, event)
-        --     print('ActivateEffectAction')
-        -- end)
-        -- Observe('gameIWorkspotGameSystem', 'PlayInDevice', function(this)
-        --     print('PlayInDevice')
-        -- end)
-        -- Observe('DataTerm', 'OnFastTravelPointsUpdated', function(this)
-        --     print('OnFastTravelPointsUpdated')
-        --     self.ft = this.linkedFastTravelPoint
-        --     self.ins = this
-        -- end)
-        -- Override("LocomotionTransition", "IsTouchingGround", function(this, script_interface, wrapped_method)
-        --     self.result = wrapped_method(script_interface)
-        --     return self.result
+        -- Observe("QuestsSystem", "SetFact", function(this, factName, value)
+        --     if string.find(factName.value, "ue_metro") then
+        --         print('SetFact')
+        --         print(factName.value)
+        --         print(value)
+        --     end
         -- end)
     end
     self.is_set_observer = true
@@ -74,10 +73,25 @@ function Debug:SetObserver()
 end
 
 function Debug:SetLogLevel()
+    function GetKeyFromValue(table_, target_value)
+        for key, value in pairs(table_) do
+            if value == target_value then
+                return key
+            end
+        end
+        return nil
+    end
+    function GetKeys(table_)
+        local keys = {}
+        for key, _ in pairs(table_) do
+            table.insert(keys, key)
+        end
+        return keys
+     end
     local selected = false
-    if ImGui.BeginCombo("LogLevel", Utils:GetKeyFromValue(LogLevel, MasterLogLevel)) then
-		for _, key in ipairs(Utils:GetKeys(LogLevel)) do
-			if Utils:GetKeyFromValue(LogLevel, MasterLogLevel) == key then
+    if ImGui.BeginCombo("LogLevel", GetKeyFromValue(LogLevel, MasterLogLevel)) then
+		for _, key in ipairs(GetKeys(LogLevel)) do
+			if GetKeyFromValue(LogLevel, MasterLogLevel) == key then
 				selected = true
 			else
 				selected = false
@@ -94,55 +108,30 @@ function Debug:SelectPrintDebug()
     PrintDebugMode = ImGui.Checkbox("Print Debug Mode", PrintDebugMode)
 end
 
-function Debug:ImGuiShowRWCount()
-    self.is_im_gui_rw_count = ImGui.Checkbox("[ImGui] R/W Count", self.is_im_gui_rw_count)
-    if self.is_im_gui_rw_count then
-        ImGui.Text("Read : " .. READ_COUNT .. ", Write : " .. WRITE_COUNT)
-    end
-end
-
-function Debug:ImGuiCheckAnim()
-    self.is_im_gui_check_anim = ImGui.Checkbox("[ImGui] check anim", self.is_im_gui_check_anim)
-    if self.is_im_gui_check_anim then
-        self.input_text_1 =  ImGui.InputText("##AnimName", self.input_text_1, 100)
-        if ImGui.Button("PlayAnim") then
-            local anim_name = CName.new(self.input_text_1)
-            local player = Game.GetPlayer()
-            local transform = player:GetWorldTransform()
-            transform:SetPosition(player:GetWorldPosition())
-            local angles = player:GetWorldOrientation():ToEulerAngles()
-            transform:SetOrientationEuler(EulerAngles.new(0, 0, angles.yaw))
-
-            local dummy_entity_id = exEntitySpawner.Spawn("base\\itm\\metro_workspot.ent", transform, '')
-
-            Cron.Every(0.01, {tick = 1}, function(timer)
-                local dummy_entity = Game.FindEntityByID(dummy_entity_id)
-                if dummy_entity ~= nil then
-                    Game.GetWorkspotSystem():StopInDevice(Game.GetPlayer())
-                    Cron.After(0.1, function()
-                        Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true, "metro_workspot", nil, nil, 0, 1, nil)
-                        Game.GetWorkspotSystem():SendJumpToAnimEnt(player, anim_name, true)
-                    end)
-                    Cron.Halt(timer)
-                end
-            end)
-            print("Excute Test Function 1")
-        end
-    end
-end
-
 function Debug:ImGuiCheckStatus()
     self.is_im_gui_check_status = ImGui.Checkbox("[ImGui] Check Status", self.is_im_gui_check_status)
     if self.is_im_gui_check_status then
         local status = self.core_obj.event_obj.current_status
         ImGui.Text("Status : " .. status)
+        if Game.GetWorkspotSystem():IsActorInWorkspot(Game.GetPlayer()) then
+            ImGui.Text("In Workspot : True")
+        else
+            ImGui.Text("In Workspot : False")
+        end
     end
 end
 
 function Debug:ImGuiPlayerLocalPosition()
     self.is_im_gui_player_local = ImGui.Checkbox("[ImGui] Player Local Pos", self.is_im_gui_player_local)
     if self.is_im_gui_player_local then
-        local player_pos = Game.GetPlayer():GetWorldPosition()
+        local player = Game.GetPlayer()
+        if player == nil then
+            return
+        end
+        local player_pos = player:GetWorldPosition()
+        if self.core_obj.metro_obj.entity == nil or  self.core_obj.metro_obj.measurement_npc_position == nil then
+            return
+        end
         local player_local_pos = self.core_obj.metro_obj:ChangeWorldPosToLocal(player_pos)
         if player_local_pos == nil then
             return
@@ -168,6 +157,14 @@ function Debug:ImGuiPlayerLocalPosition()
         local player_pos_y = string.format("%.2f", pos.y)
         local player_pos_z = string.format("%.2f", pos.z)
         ImGui.Text("Player Local Pos Correctly : " .. player_pos_x .. ", " .. player_pos_y .. ", " .. player_pos_z)
+        local prev_pos = self.core_obj.event_obj.prev_player_local_pos
+        if prev_pos == nil then
+            return
+        end
+        local prev_pos_x = string.format("%.2f", prev_pos.x)
+        local prev_pos_y = string.format("%.2f", prev_pos.y)
+        local prev_pos_z = string.format("%.2f", prev_pos.z)
+        ImGui.Text("Player Prev Pos : " .. prev_pos_x .. ", " .. prev_pos_y .. ", " .. prev_pos_z)
     end
 end
 
@@ -195,10 +192,54 @@ function Debug:ImGuiMetroSpeed()
     if self.is_im_gui_metro_speed then
         local metro_speed = self.core_obj.metro_obj:GetSpeed()
         ImGui.Text("Metro Speed : " .. metro_speed)
-        local player_speed = self.core_obj.player_obj.current_speed
-        ImGui.Text("Player Speed : " .. player_speed)
+        local res = self.core_obj.event_obj.is_on_ground
+        if res then
+            ImGui.Text("On Ground : True")
+        else
+            ImGui.Text("On Ground : False")
+        end
     end
 end
+
+function Debug:ImGuiRistrictedArea()
+    self.is_im_gui_ristrict = ImGui.Checkbox("[ImGui] Station", self.is_im_gui_ristrict)
+    if self.is_im_gui_ristrict then
+        local next_station_num = self.core_obj.metro_obj.next_station_num
+        ImGui.Text("Next Station : " .. next_station_num)
+        if self.core_obj.metro_obj:IsNextInvalidStation() then
+            ImGui.Text("Next Invalid : True")
+        else
+            ImGui.Text("Next Invalid : False")
+        end
+        if self.core_obj.metro_obj:IsNextFinalStation() then
+            ImGui.Text("Next Final : True")
+        else
+            ImGui.Text("Next Final : False")
+        end
+        if self.core_obj.metro_obj:IsInStation() then
+            ImGui.Text("In Station : True")
+        else
+            ImGui.Text("In Station : False")
+        end
+        if self.core_obj.metro_obj:IsCurrentInvalidStation() then
+            ImGui.Text("Current Invalid : True")
+        else
+            ImGui.Text("Current Invalid : False")
+        end
+    end
+end
+
+function Debug:ImGuiLineInfo()
+    self.is_im_gui_line_info = ImGui.Checkbox("[ImGui] Line Info", self.is_im_gui_line_info)
+    if self.is_im_gui_line_info then
+        local active_station = Game.GetQuestsSystem():GetFact(CName.new("ue_metro_active_station"))
+        local next_station = Game.GetQuestsSystem():GetFact(CName.new("ue_metro_next_station"))
+        local line = Game.GetQuestsSystem():GetFact(CName.new("ue_metro_track_selected"))
+        ImGui.Text("Activate Station : " .. active_station)
+        ImGui.Text("Next Station : " .. next_station)
+        ImGui.Text("Line : " .. line)
+    end
+end 
 
 function Debug:ImGuiMeasurement()
     self.is_im_gui_measurement = ImGui.Checkbox("[ImGui] Measurement", self.is_im_gui_measurement)
@@ -237,220 +278,56 @@ end
 
 function Debug:ImGuiExcuteFunction()
     if ImGui.Button("TF1") then
-        self.core_obj:EnableWalkingMetro()
+        local sys = Game.GetPlayer():GetFastTravelSystem()
+        local arr = sys:GetFastTravelPoints()
+        print(#arr)
+        for _, point in ipairs(arr) do
+            local pointID = tostring(point.pointRecord.value)
+            if string.find(pointID, 'wat_lch_metro_ftp_02', 1, true) then
+                pointData = point
+                break
+            end
+        end
+        sys:PerformFastTravel(Game.GetPlayer(), pointData)
+        sys:SetFastTravelStarted()
         print("Excute Test Function 1")
     end
     ImGui.SameLine()
     if ImGui.Button("TF2") then
-        Game.GetWorkspotSystem():MountToVehicle(self.core_obj.metro_obj.entity, Game.GetPlayer(), 1.0, 1.0, "trunkBodyDisposalPlayer", "Passengers")
+        local player = Game.GetPlayer()
+        local player_pos = player:GetWorldPosition()
+        local forward = player:GetWorldForward()
+        local new_pos = Vector4.new(player_pos.x + 3 * forward.x, player_pos.y + 3 * forward.y, player_pos.z + 3 * forward.z, player_pos.w)
+        local angle = player:GetWorldOrientation():ToEulerAngles()
+        Game.GetTeleportationFacility():Teleport(player, new_pos, angle)
         print("Excute Test Function 2")
     end
     ImGui.SameLine()
     if ImGui.Button("TF3") then
-        self.core_obj:Init()
-        print(self.core_obj.metro_obj.player_seat_position.x .. ", " .. self.core_obj.metro_obj.player_seat_position.y .. ", " .. self.core_obj.metro_obj.player_seat_position.z)
+        local event = gameuiDeleteInputHintBySourceEvent.new()
+        event.source = CName.new("UI_DPad")
+        event.targetHintContainer = CName.new("GameplayInputHelper")
+        Game.GetUISystem():QueueEvent(event)
         print("Excute Test Function 3")
     end
     ImGui.SameLine()
     if ImGui.Button("TF4") then
-        local entity = self.core_obj.metro_obj.entity:FindComponentByName("OccupantSlots"):GetEntity()
-        local entity_pos = entity:GetWorldPosition()
-        local local_pos = self.core_obj.metro_obj:ChangeWorldPosToLocal(entity_pos)
-        print(entity_pos.x .. ", " .. entity_pos.y .. ", " .. entity_pos.z)
-        print(local_pos.x .. ", " .. local_pos.y .. ", " .. local_pos.z)
-        local world_pos = self.core_obj.metro_obj:ChangeLocalPosToWorld(local_pos)
-        print(world_pos.x .. ", " .. world_pos.y .. ", " .. world_pos.z)
+        local system = Game.GetQuestsSystem()
+        system:SetFact(CName.new("ue_metro_next_station"), 1) 
         print("Excute Test Function 4")
     end
     ImGui.SameLine()
     if ImGui.Button("TF5") then
-        local player_pos = Game.GetPlayer():GetWorldPosition()
-        local right = self.core_obj.metro_obj.entity:GetWorldRight()
-        local forward = self.core_obj.metro_obj.entity:GetWorldForward()
-        local up = self.core_obj.metro_obj.entity:GetWorldUp()
-        local filter = "Static"
-        local ratio = 20
-        local next_pos_right = Vector4.new(player_pos.x + ratio * right.x, player_pos.y + ratio * right.y, player_pos.z + ratio * right.z, player_pos.w)
-        local next_pos_forward = Vector4.new(player_pos.x + ratio * forward.x, player_pos.y + ratio * forward.y, player_pos.z + ratio * forward.z, player_pos.w)
-        local next_pos_up = Vector4.new(player_pos.x + ratio * up.x, player_pos.y + ratio * up.y, player_pos.z + ratio * up.z, player_pos.w)
-        local success, trace_result = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, next_pos_right, filter, false, false)
-        if success then
-            print("Success Right")
-            local trace_result_pos = trace_result.position
-            print(trace_result_pos.x .. ", " .. trace_result_pos.y .. ", " .. trace_result_pos.z)
-        end
-        success, trace_result = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, next_pos_forward, filter, false, false)
-        if success then
-            print("Success Forward")
-            local trace_result_pos = trace_result.position
-            print(trace_result_pos.x .. ", " .. trace_result_pos.y .. ", " .. trace_result_pos.z)
-        end
-        success, trace_result = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, next_pos_up, filter, false, false)
-        if success then
-            print("Success Up")
-            local trace_result_pos = trace_result.position
-            print(trace_result_pos.x .. ", " .. trace_result_pos.y .. ", " .. trace_result_pos.z)
-        end
+        print(Game.GetQuestsSystem():SetFact(CName.new("ue_metro_free_roam_get_up"), 1))
         print("Excute Test Function 5")
     end
     ImGui.SameLine()
     if ImGui.Button("TF6") then
-        Game.GetWorkspotSystem():ResetPlaybackToStart(Game.GetPlayer())
+        local current_pos = Game.GetPlayer():GetWorldPosition()
+        print(current_pos.x .. ", " .. current_pos.y .. ", " .. current_pos.z)
         print("Excute Test Function 6")
     end
-    if ImGui.Button("TF7") then
-        local player = Game.GetPlayer()
-        local cam = player:GetFPPCameraComponent()
-        cam:SetLocalOrientation(Quaternion.new(0, 0, 0, 1))
-        cam:SetZoom(0.5)
-        cam:Deactivate()
-        cam:Activate()
-        print("Excute Test Function 7")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF8") then
-        self.core_obj.metro_obj.entity:PerformPitchAdjustment(500)
-        print("Excute Test Function 8")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF9") then
-        -- Cron.Every(0.01, {tick = 1}, function(timer)
-        --     print("entity:" .. self.core_obj.metro_obj.entity:GetCurrentSpeed())
-        -- end)
-        Cron.Every(0.01 , {tick = 1}, function(timer)
-            if self.past_pos_entity == nil then
-                self.past_pos_entity = self.core_obj.metro_obj.entity:GetWorldPosition()
-                return
-            end
-            if self.past_pos == nil then
-                self.past_pos = Game.GetPlayer():GetWorldPosition()
-                return
-            end
-            local current_pos_entity = self.core_obj.metro_obj.entity:GetWorldPosition()
-            local diff_entity = Vector4.new(current_pos_entity.x - self.past_pos_entity.x, current_pos_entity.y - self.past_pos_entity.y, current_pos_entity.z - self.past_pos_entity.z, 1)
-            local current_pos = Game.GetPlayer():GetWorldPosition()
-            local diff = Vector4.new(current_pos.x - self.past_pos.x, current_pos.y - self.past_pos.y, current_pos.z - self.past_pos.z, 1)
-            local diff_vec = Vector4.new(diff.x - diff_entity.x, diff.y - diff_entity.y, diff.z - diff_entity.z, 1)
-            print("x" .. diff_vec.x .. ", y" .. diff_vec.y .. ", z" .. diff_vec.z)
-            self.past_pos = Game.GetPlayer():GetWorldPosition()
-            self.past_pos_entity = self.core_obj.metro_obj.entity:GetWorldPosition()
-        end)
-        print("Excute Test Function 9")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF10") then
-        local player = Game.GetPlayer()
-        local dummy_entity = GetMountedVehicle(player)
-        local workspot_resorce_component_name = "trunkBodyDisposalPlayer"
-        local pose_name = "sit_metro_lean180__lh_window__01"
-        -- Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true, workspot_resorce_component_name, nil, nil, 0, 1, nil)
-        -- Game.GetWorkspotSystem():PlayInDeviceSimple(dummy_entity, player, true)
-        -- Game.GetWorkspotSystem():SendJumpToAnimEnt(player, pose_name, false)
-        Game.GetWorkspotSystem():SendPlaySignal(player)
-        print(Game.GetWorkspotSystem():IsActorInWorkspot(player))
-        print(Game.GetWorkspotSystem():IsInVehicleWorkspot(dummy_entity, player, "Passengers"))
-        print(Game.GetWorkspotSystem():IsWorkspotEnabled(player))
 
-		local seID_1 = TweakDBID.new("GameplayRestriction.NoJump")
-        local seID_2 = TweakDBID.new("GameplayRestriction.NoSprint")
-		StatusEffectHelper.ApplyStatusEffect(player, seID_1)
-        StatusEffectHelper.ApplyStatusEffect(player, seID_2)
-
-        print("Excute Test Function 10")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF11") then
-        local action = self.core_obj.action
-        local consumer = self.core_obj.consumer
-        Game.GetPlayer():OnAction(action, consumer)
-
-        print("Excute Test Function 11")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF12") then
-        if self.switch then
-            -- Game.GetTimeSystem():SetIgnoreTimeDilationOnLocalPlayerZero(false)
-            -- Game.GetTimeSystem():UnsetTimeDilation("consoleCommand", "None")
-            Game.GetTimeSystem():UnsetTimeDilation(CName.new("pause"), "None")
-            TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", false, true)
-            TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), false)
-        else
-            -- Game.GetTimeSystem():SetIgnoreTimeDilationOnLocalPlayerZero(true)
-            -- Game.GetTimeSystem():SetTimeDilation("consoleCommand", 0.0000000000001)
-            Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.0)
-            TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", true, true)
-            TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), true)
-        end
-        self.switch = not self.switch
-        print("Excute Test Function 12")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF13") then
-        local player = Game.GetPlayer()
-        local target = Game.GetTargetingSystem():GetLookAtObject(player, true, false) or Game.GetTargetingSystem():GetLookAtObject(player, false, false)
-        print(target:GetWorldPosition().x .. ", " .. target:GetWorldPosition().y .. ", " .. target:GetWorldPosition().z)
-        print("Excute Test Function 13")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF14") then
-        Cron.Every(0.01, {tick = 1}, function(timer)
-            if self.past_pos == nil then
-                self.past_pos = Game.GetPlayer():GetWorldPosition()
-                return
-            end
-            local current_pos = Game.GetPlayer():GetWorldPosition()
-            local diff = Vector4.new(current_pos.x - self.past_pos.x, current_pos.y - self.past_pos.y, current_pos.z - self.past_pos.z, 1)
-            local distance = Vector4.Length(diff)
-            print("player:" .. distance)
-            self.past_pos = Game.GetPlayer():GetWorldPosition()
-        end)
-        print("Excute Test Function 14")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF15") then
-        if not self.result then
-            Cron.Every(0.001, {tick = 1}, function(timer)
-                local player = Game.GetPlayer()
-                local pos = player:GetWorldPosition()
-                pos.z = pos.z - 0.2
-                local angle = player:GetWorldOrientation():ToEulerAngles()
-                Game.GetTeleportationFacility():Teleport(player, pos, angle)
-                if self.result then
-                    Cron.Halt(timer)
-                end
-            end)
-        end
-        print("Excute Test Function 15")
-    end
-    if ImGui.Button("TF16") then
-        local min_distance = 100
-        local min_index = 0
-        local player_pos = Game.GetPlayer():GetWorldPosition()
-        local arr = Game.GetPlayer():GetNPCsAroundObject()
-        for i, v in ipairs(arr) do
-            -- local inf = TweakDBInterface.new()
-            -- print(inf:GetCNameDefault(v:GetRecordID()).value)
-            -- print(v:GetCurrentAppearanceName().value)
-            local pos = v:GetWorldPosition()
-            local distnce = Vector4.Distance(player_pos, pos)
-            print(v:GetCurrentAppearanceName().value)
-            print(distnce)
-            if distnce < min_distance then
-                min_distance = distnce
-                min_index = i
-            end
-        end
-        Cron.Every(0.01, {tick = 1}, function(timer)
-            local pos = arr[min_index]:GetWorldPosition()
-            -- local player_pos = Game.GetPlayer():GetWorldPosition()
-            -- local diff = Vector4.new(pos.x - player_pos.x, pos.y - player_pos.y, pos.z - player_pos.z, 1)
-            -- local distance = Vector4.Length(diff)
-            -- print("player:" .. distance)
-            local local_pos = self.core_obj.metro_obj:ChangeWorldPosToLocal(pos)
-            print(local_pos.x .. ", " .. local_pos.y .. ", " .. local_pos.z)
-        end)
-        print("Excute Test Function 16")
-    end
 end
 
 return Debug
