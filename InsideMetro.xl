@@ -1,5 +1,10 @@
 streaming:
   sectors:
+    - path: base\worlds\03_night_city\_compiled\default\always_loaded_1.streamingsector
+      expectedNodes: 15087
+      nodeDeletions:
+        - index: 1771
+          type: worldCompiledCommunityAreaNode
     # c line
     # rainbow
     - path: base\worlds\03_night_city\_compiled\default\exterior_-12_-10_0_0.streamingsector
@@ -12,29 +17,45 @@ streaming:
       nodeDeletions:
         - index: 405
           type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [80,81]
         - index: 413
           type: worldCollisionNode
+          expectedActors: 11
+          actorDeletions: [10]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_-3_0_2.streamingsector
       expectedNodes: 1014
       nodeDeletions:
         - index: 983
           type: worldCollisionNode
+          expectedActors: 22
+          actorDeletions: [21]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-7_-5_0_1.streamingsector
       expectedNodes: 1484
       nodeDeletions:
         - index: 1468
           type: worldCollisionNode
+          expectedActors: 52
+          actorDeletions: [47,48,49,50,51]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-4_-2_0_2.streamingsector
       expectedNodes: 4268
       nodeDeletions:
         - index: 4093
           type: worldCollisionNode
+          expectedActors: 17
+          actorDeletions: [13,14,15,16]
         - index: 4156
           type: worldCollisionNode
+          expectedActors: 64
+          actorDeletions: [61,62,63]
         - index: 4160
           type: worldCollisionNode
+          expectedActors: 12
+          actorDeletions: [9,10,11]
         - index: 4179
           type: worldCollisionNode
+          expectedActors: 35
+          actorDeletions: [33,34]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-8_-4_0_1.streamingsector
       expectedNodes: 1235
       nodeDeletions:
@@ -42,13 +63,19 @@ streaming:
           type: worldCollisionNode
         - index: 1218
           type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [120,121]
         - index: 1230
           type: worldCollisionNode
+          expectedActors: 47
+          actorDeletions: [46]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-9_-3_0_1.streamingsector
       expectedNodes: 1638
       nodeDeletions:
         - index: 1608
           type: worldCollisionNode
+          expectedActors: 6
+          actorDeletions: [5]
     # d line
     # memorial park
     - path: base\worlds\03_night_city\_compiled\default\exterior_-2_-1_0_4.streamingsector
@@ -61,6 +88,8 @@ streaming:
       nodeDeletions:
         - index: 2127
           type: worldCollisionNode
+          expectedActors: 30
+          actorDeletions: [27]
         - index: 2170
           type: worldCollisionNode
         - index: 2171
@@ -70,10 +99,16 @@ streaming:
       nodeDeletions:
         - index: 2133
           type: worldCollisionNode
+          expectedActors: 27
+          actorDeletions: [23,25,26]
         - index: 2156
           type: worldCollisionNode
         - index: 2157
           type: worldCollisionNode
+        - index: 2173
+          type: worldCollisionNode
+          expectedActors: 111
+          actorDeletions: [16]
         - index: 2188
           type: worldCollisionNode
         - index: 2189
@@ -83,20 +118,9 @@ streaming:
       nodeDeletions:
         - index: 3336
           type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [13]
         - index: 3339
-          type: worldCollisionNode
-    - path: base\worlds\03_night_city\_compiled\default\exterior_-3_3_0_3.streamingsector
-      expectedNodes: 2094
-      nodeDeletions:
-        - index: 2067
-          type: worldCollisionNode
-        - index: 2078
-          type: worldCollisionNode
-        - index: 2079
-          type: worldCollisionNode
-        - index: 2082
-          type: worldCollisionNode
-        - index: 2084
           type: worldCollisionNode
    # watson
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_1_0_3.streamingsector
@@ -227,17 +251,28 @@ streaming:
           expectedActors: 103
           actorDeletions: [94]
     # downtown
-    # - path: base\worlds\03_night_city\_compiled\default\exterior_-5_0_0_3.streamingsector
-    #   expectedNodes: 1339
-    #   nodeDeletions:
-    #     - index: 1296
-    #       type: worldCollisionNode
-    #       expectedActors: 128
-    #       actorDeletions: [7]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-5_0_0_3.streamingsector
+      expectedNodes: 1339
+      nodeDeletions:
+        - index: 1296
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [6,7,8,9,10]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-5_1_0_2.streamingsector
+      expectedNodes: 2627
+      nodeDeletions:
+        - index: 2555
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [35,104,105]
     # westbrook
     - path: base\worlds\03_night_city\_compiled\default\exterior_-2_2_0_3.streamingsector
       expectedNodes: 1511
       nodeDeletions:
+        - index: 1259
+          type: worldCollisionNode
+          expectedActors: 123
+          actorDeletions: [113]
         - index: 1262
           type: worldCollisionNode
           expectedActors: 128
@@ -256,20 +291,31 @@ streaming:
           type: worldCollisionNode
           expectedActors: 128
           actorDeletions: [54]
-    # - path: base\worlds\03_night_city\_compiled\default\exterior_-6_7_0_2.streamingsector
-    #   expectedNodes: 1891
-    #   nodeDeletions:
-    #     - index: 1868
-    #       type: worldCollisionNode
-    #     - index: 1882
-    #       type: worldCollisionNode
-    #     - index: 1883
-    #       type: worldCollisionNode
-    # - path: base\worlds\03_night_city\_compiled\default\exterior_-11_15_0_1.streamingsector
-    #   expectedNodes: 1823
-    #   nodeDeletions:
-    #     - index: 1018
-    #       type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_0_-1_0_3.streamingsector
+      expectedNodes: 1934
+      nodeDeletions:
+        - index: 1909
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [83,85]
+        - index: 1916
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [59]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-1_0_0_3.streamingsector
+      expectedNodes: 3102
+      nodeDeletions:
+        - index: 3063
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [27,31,79,80]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-1_2_0_2.streamingsector
+      expectedNodes: 668
+      nodeDeletions:
+        - index: 660
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [72]
     # heywood
     - path: base\worlds\03_night_city\_compiled\default\exterior_-5_-2_0_2.streamingsector
       expectedNodes: 3562
@@ -302,5 +348,102 @@ streaming:
       nodeDeletions:
         - index: 1508
           type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [79,83,84,86]
         - index: 1514
           type: worldCollisionNode
+          expectedActors: 87
+          actorDeletions: [65,66,86]
+    # santdomingo
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-5_-6_0_2.streamingsector
+      expectedNodes: 2668
+      nodeDeletions:
+        - index: 2663
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [83,84]
+        - index: 2667
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [85]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-2_-2_0_3.streamingsector
+      expectedNodes: 1061
+      nodeDeletions:
+        - index: 1053
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [91]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-2_-3_0_3.streamingsector
+      expectedNodes: 872
+      nodeDeletions:
+        - index: 855
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [82,120]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-6_-6_0_1.streamingsector
+      expectedNodes: 554
+      nodeDeletions:
+        - index: 548
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [90,91]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-1_-2_0_3.streamingsector
+      expectedNodes: 1653
+      nodeDeletions:
+        - index: 1631
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [70]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-2_-3_0_2.streamingsector
+      expectedNodes: 1522
+      nodeDeletions:
+        - index: 1521
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [53]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-1_-1_0_3.streamingsector
+      expectedNodes: 942
+      nodeDeletions:
+        - index: 925
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [127]
+        - index: 936
+          type: worldCollisionNode
+          expectedActors: 109
+          actorDeletions: [91,92]
+        - index: 938
+          type: worldCollisionNode
+          expectedActors: 122
+          actorDeletions: [54,60]
+    # pacifica
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-3_-3_0_3.streamingsector
+      expectedNodes: 1478
+      nodeDeletions:
+        - index: 1427
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [51]
+        - index: 1432
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [104]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-11_-14_0_1.streamingsector
+      expectedNodes: 2246
+      nodeDeletions:
+        - index: 465
+          type: worldCollisionNode
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-6_-7_0_2.streamingsector
+      expectedNodes: 1058
+      nodeDeletions:
+        - index: 986
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [90]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-6_-8_0_2.streamingsector
+      expectedNodes: 416
+      nodeDeletions:
+        - index: 133
+          type: worldCollisionNode
+          expectedActors: 7
+          actorDeletions: [0,6]
