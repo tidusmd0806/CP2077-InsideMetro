@@ -224,38 +224,8 @@ function Event:SetStatus(status)
     end
 end
 
-function Event:IsInMetro()
-    return self.current_status ~= Def.State.OutsideMetro
-end
-
-function Event:IsOnGround()
-    return self.is_on_ground
-end
-
 function Event:GetStatus()
     return self.current_status
-end
-
-function Event:SetRestrictions()
-    local player = Game.GetPlayer()
-    SaveLocksManager.RequestSaveLockAdd(CName.new("InsideTheMetro"))
-    local no_jump = TweakDBID.new("GameplayRestriction.NoJump")
-    local no_sprint = TweakDBID.new("GameplayRestriction.NoSprint")
-    StatusEffectHelper.ApplyStatusEffect(player, no_jump)
-    StatusEffectHelper.ApplyStatusEffect(player, no_sprint)
-end
-
-function Event:RemoveRestrictions()
-    local player = Game.GetPlayer()
-    local no_jump = TweakDBID.new("GameplayRestriction.NoJump")
-    local no_sprint = TweakDBID.new("GameplayRestriction.NoSprint")
-    local res_1 = StatusEffectHelper.RemoveStatusEffect(player, no_jump)
-    local res_2 = StatusEffectHelper.RemoveStatusEffect(player, no_sprint)
-    if not res_1 or not res_2 then
-        self.log_obj:Record(LogLevel.Error, "Remove Restrictions Failed")
-        return
-    end
-    SaveLocksManager.RequestSaveLockRemove(CName.new("InsideTheMetro"))
 end
 
 function Event:CheckAllEvents()
@@ -480,8 +450,8 @@ function Event:CheckTouchGround()
     -- local search_pos_1 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,7,0.2,1))
     -- local search_pos_2 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,-7,0.2,1))
     -- local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(search_pos_1, search_pos_2, "Static", false, false)
-    local search_pos = self.metro_obj:GetAccurateWorldPosition(Vector4.new(player_pos.x, player_pos.y + 5.0, player_pos.z - 0.1, 1))
-    local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(local_player_pos, search_pos, "Static", false, false)
+    local search_pos = self.metro_obj:GetAccurateWorldPosition(Vector4.new(local_player_pos.x, local_player_pos.y + 5.0, local_player_pos.z - 0.1, 1))
+    local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, search_pos, "Static", false, false)
     if res then
         if not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
             self.log_obj:Record(LogLevel.Trace, "Touch Concrete")
