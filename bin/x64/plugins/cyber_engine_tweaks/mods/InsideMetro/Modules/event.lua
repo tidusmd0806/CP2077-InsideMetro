@@ -331,7 +331,7 @@ end
 function Event:CheckEnableStand()
 
     if not self.is_ready then
-        if self.metro_obj:GetSpeed() >= 0.001 then
+        if self.metro_obj:GetSpeed() >= 1 then
             self.is_ready = true
             local active_station = self.metro_obj:GetActiveStation()
             for _, track_info in ipairs(self.metro_obj:GetTrackList(active_station)) do
@@ -366,7 +366,7 @@ function Event:CheckEnableStand()
         end
     end
 
-    if self.metro_obj:GetSpeed() < 0.001 then
+    if self.metro_obj:GetSpeed() < 1 then
         if is_invalid then
             self.log_obj:Record(LogLevel.Debug, "Detect Invalid Station")
             self:SetStatus(Def.State.SitInsideMetro)
@@ -400,10 +400,10 @@ end
 function Event:CheckEnableSit()
 
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
-    if self.metro_obj:IsInSeatArea(player_local_pos) and self.metro_obj:GetSpeed() >= 0.001 and not InsideMetro.is_avoidance_mode then
+    if self.metro_obj:IsInSeatArea(player_local_pos) and self.metro_obj:GetSpeed() >= 1 and not InsideMetro.is_avoidance_mode then
         self.log_obj:Record(LogLevel.Debug, "Player is in Seat Area")
         self:SetStatus(Def.State.EnableSit)
-    elseif self.metro_obj:GetSpeed() >= 0.001 then
+    else
         self.log_obj:Record(LogLevel.Debug, "Player is not in Seat Area")
         self:SetStatus(Def.State.WalkInsideMetro)
     end
@@ -422,13 +422,13 @@ end
 
 function Event:CheckRestrictedArea()
 
-    if self:IsPassedRestrictedBorder() then
-        self.log_obj:Record(LogLevel.Info, "Player is passed Restricted Border")
-        InsideMetro.is_avoidance_mode = false
-        InsideMetro.core_obj:DisableWalkingMetro()
-        self.hud_obj:ShowDangerWarning()
-        return
-    end
+    -- if self:IsPassedRestrictedBorder() then
+    --     self.log_obj:Record(LogLevel.Info, "Player is passed Restricted Border")
+    --     InsideMetro.is_avoidance_mode = false
+    --     InsideMetro.core_obj:DisableWalkingMetro()
+    --     self.hud_obj:ShowDangerWarning()
+    --     return
+    -- end
 
     if self.metro_obj:IsNextFinalStation() and self.metro_obj:IsInStation() then
         self.log_obj:Record(LogLevel.Info, "Player is in Final Station")
@@ -447,9 +447,11 @@ function Event:CheckTouchGround()
     if not self.metro_obj:IsInMetro(local_player_pos) then
         return
     end
-    local search_pos_1 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,7,0.2,1))
-    local search_pos_2 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,-7,0.2,1))
-    local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(search_pos_1, search_pos_2, "Static", false, false)
+    -- local search_pos_1 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,7,0.2,1))
+    -- local search_pos_2 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,-7,0.2,1))
+    -- local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(search_pos_1, search_pos_2, "Static", false, false)
+    local search_pos = self.metro_obj:GetAccurateWorldPosition(Vector4.new(player_pos.x, player_pos.y + 5.0, player_pos.z - 0.1, 1))
+    local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(local_player_pos, search_pos, "Static", false, false)
     if res then
         if not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
             self.log_obj:Record(LogLevel.Trace, "Touch Concrete")

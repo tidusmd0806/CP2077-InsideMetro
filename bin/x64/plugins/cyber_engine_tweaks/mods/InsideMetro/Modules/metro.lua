@@ -22,6 +22,7 @@ function Metro:New()
     obj.measurement_npc_diff_yaw = 0
     obj.next_station_num = 1
     obj.selected_track_index = 1
+    obj.is_speed_observer = false
     return setmetatable(obj, self)
 end
 
@@ -235,6 +236,11 @@ end
 
 function Metro:SetSpeedObserver()
 
+    if self.is_speed_observer then
+        self.log_obj:Record(LogLevel.Warning, "SpeedObserver is already running")
+        return
+    end
+    self.is_speed_observer = true
     Cron.Every(0.01, {tick = 1}, function(timer)
         timer.tick = timer.tick + 1
         if self.entity == nil then
@@ -244,6 +250,7 @@ function Metro:SetSpeedObserver()
             timer_.tick = timer_.tick + 1
             if self.entity == nil then
                 Cron.Halt(timer_)
+                self.is_speed_observer = false
                 return
             elseif self.measurement_npc_entity == nil then
                 return

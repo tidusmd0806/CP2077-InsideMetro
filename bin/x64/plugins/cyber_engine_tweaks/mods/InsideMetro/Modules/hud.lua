@@ -118,7 +118,7 @@ function HUD:SetChoice(variation)
     hub.id = 69420 + math.random(99999)
 
     if variation == Def.ChoiceVariation.Stand then
-        local icon = TweakDBInterface.GetChoiceCaptionIconPartRecord("ChoiceCaptionParts.MetroIcon")
+        local icon = TweakDBInterface.GetChoiceCaptionIconPartRecord("ChoiceCaptionParts.GetUpIcon")
         local caption_part = gameinteractionsChoiceCaption.new()
         local choice_type = gameinteractionsChoiceTypeWrapper.new()
         caption_part:AddPartFromRecord(icon)
