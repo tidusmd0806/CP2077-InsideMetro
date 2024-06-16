@@ -62,6 +62,12 @@ function Debug:SetObserver()
         --         print(value)
         --     end
         -- end)
+        -- Observe("NcartMetroComponent", "OnMountingEvent", function(this, event)
+        --     print(event:GetClassName().value)
+        --     if event:GetClassName().value == "enteventsPhysicalCollisionEvent" then
+        --         print("collision")
+        --     end
+        -- end)
     end
     self.is_set_observer = true
 

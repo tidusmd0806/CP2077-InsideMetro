@@ -224,8 +224,38 @@ function Event:SetStatus(status)
     end
 end
 
+function Event:IsInMetro()
+    return self.current_status ~= Def.State.OutsideMetro
+end
+
+function Event:IsOnGround()
+    return self.is_on_ground
+end
+
 function Event:GetStatus()
     return self.current_status
+end
+
+function Event:SetRestrictions()
+    local player = Game.GetPlayer()
+    SaveLocksManager.RequestSaveLockAdd(CName.new("InsideTheMetro"))
+    local no_jump = TweakDBID.new("GameplayRestriction.NoJump")
+    local no_sprint = TweakDBID.new("GameplayRestriction.NoSprint")
+    StatusEffectHelper.ApplyStatusEffect(player, no_jump)
+    StatusEffectHelper.ApplyStatusEffect(player, no_sprint)
+end
+
+function Event:RemoveRestrictions()
+    local player = Game.GetPlayer()
+    local no_jump = TweakDBID.new("GameplayRestriction.NoJump")
+    local no_sprint = TweakDBID.new("GameplayRestriction.NoSprint")
+    local res_1 = StatusEffectHelper.RemoveStatusEffect(player, no_jump)
+    local res_2 = StatusEffectHelper.RemoveStatusEffect(player, no_sprint)
+    if not res_1 or not res_2 then
+        self.log_obj:Record(LogLevel.Error, "Remove Restrictions Failed")
+        return
+    end
+    SaveLocksManager.RequestSaveLockRemove(CName.new("InsideTheMetro"))
 end
 
 function Event:CheckAllEvents()
