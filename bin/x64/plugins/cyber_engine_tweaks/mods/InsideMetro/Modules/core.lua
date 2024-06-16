@@ -15,29 +15,9 @@ function Core:New()
     obj.event_obj = Event:New(obj.player_obj, obj.metro_obj)
     -- static --
     obj.event_check_interval = 0.01
-    obj.despawn_count_after_standup = 250
     obj.wait_time_after_standup = 3.5
-    obj.wait_time_after_sitdown = 0.01
     obj.stand_up_anim = "sit_chair_lean0__2h_elbow_on_knees__01__to__stand__2h_on_sides__01__turn0__q005_01__01"
     obj.sit_down_anim = "sit_chair_lean180__2h_on_lap__01"
-    obj.ristricted_station_area = {
-        -- {x = -506, y = 1147, z = 104, r = 50, name = "MONROE_AND_SAGAN"},
-        {x = -795, y = 1333, z = 87, r = 50, name = "EAST_BRIDGE"}, 
-        {x = -1415, y = 1042, z = 47, r = 50, name = "ELLISON_PLAZA"},
-        {x = -1774, y = 1853, z = 48, r = 50, name = "EISENHOWER_STREET"},
-        {x = -1461, y = 1170, z = 46, r = 50, name = "MEGABUILDING_H10"},
-        {x = 168, y = -1172, z = 40, r = 50, name = "MEGABUILDING_H7"},
-        -- {x = -121, y = 130, z = 52, r = 50, name = "CHARTER_HILL"},
-        {x = -504, y = -167, z = 50, r = 50, name = "E_LINE_FINAL_POINT"},
-        {x = -1478, y = -1893, z = 71, r = 150, name = "PACIFICA_STADIUM"},
-        {x = -1115, y = -322, z = -15, r = 50, name = "CONGRESS_AND_MLK"},
-        {x = -1322, y = -62, z = -3, r = 50, name = "MEMORIAL_PARK"},
-        {x = -1355, y = 1740, z = 45, r = 50, name = "MEDCENTER"},
-        {x = -1598, y = 1484, z = 48, r = 50, name = "FARRIER_AND_FERGUSON"},
-        {x = -2085, y = 835, z = 69, r = 50, name = "WEST_BRIDGE"},
-        {x = -741, y = -596, z = 37, r = 50, name = "C_LINE_RAINBOW_1"},
-        -- {x = -1044, y = -376, z = 3, r = 50, name = "C_LINE_RAINBOW_2"},
-    }
     -- dynamic --
     obj.move_forward = false
     obj.move_backward = false
@@ -67,8 +47,11 @@ function Core:SetObserverAction()
 
         self.log_obj:Record(LogLevel.Debug, "Action Name: " .. action_name .. " Type: " .. action_type .. " Value: " .. action_value)
 
+        if self.event_obj:IsInPouse() then
+            return
+        end
         local status = self.event_obj:GetStatus()
-        if status == Def.State.EnableStand and not self:IsInRestrictedArea() then
+        if status == Def.State.EnableStand and not self.metro_obj:IsCurrentInvalidStation() then
             if (action_name == "UETChangePose" and action_type == "BUTTON_PRESSED") or (action_name == "UETWindow" and action_type == "BUTTON_PRESSED") or (action_name == "UETExit" and action_type == "BUTTON_PRESSED") then
                 consumer:Consume()
             end
@@ -84,7 +67,7 @@ function Core:SetObserverAction()
             end
         end
 
-        -- 
+        -- refer to free fly mod (https://www.nexusmods.com/cyberpunk2077/mods/780)
         if action_name == 'Forward' then
             if action_type == 'BUTTON_PRESSED' then
                 self.move_forward = true
@@ -157,19 +140,6 @@ function Core:SetFreezeMode(is_freeze)
     end
 end
 
-function Core:IsLineC()
-    local player_pos = Game.GetPlayer():GetWorldPosition()
-    for _, area in ipairs(self.ristricted_station_area) do
-        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
-        if distance < area.r then
-            if area.name == "CONGRESS_AND_MLK" or area.name == "MEMORIAL_PARK" then
-                return true
-            end
-        end
-    end
-    return false
-end
-
 function Core:EnableWalkingMetro()
 
     if self.is_switching_pose then
@@ -186,14 +156,19 @@ function Core:EnableWalkingMetro()
     else
         workspot_angle.yaw = workspot_angle.yaw + 180
     end
+    local_workspot_pos.y = local_workspot_pos.y + self.event_obj.standing_y_offset
     local world_pos = self.metro_obj:GetAccurateWorldPosition(local_workspot_pos)
     self.player_obj:PlayPose(self.stand_up_anim, world_pos, workspot_angle)
     self:KeepWorkspotSeatPostion(local_workspot_pos, workspot_angle)
     Cron.After(self.wait_time_after_standup, function()
         self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
+        self:SetFreezeMode(true)
         self.metro_obj:Unmount()
         self.event_obj:SetStatus(Def.State.WalkInsideMetro)
         self.is_switching_pose = false
+        Cron.After(0.5, function()
+            self:SetFreezeMode(false)
+        end)
     end)
 
 end
@@ -264,37 +239,7 @@ function Core:KeepWorkspotSeatPostion(local_pos, angle)
 
 end
 
-function Core:IsInRestrictedArea()
-
-    local player_pos = Game.GetPlayer():GetWorldPosition()
-    for _, area in ipairs(self.ristricted_station_area) do
-        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
-        if distance < area.r then
-            if area.name == "E_LINE_FINAL_POINT" then
-                self.event_obj.is_passed_e_line_final_point = true
-            end
-            return true
-        end
-    end
-    return false
-
-end
-
-function Core:IsPassedELineFinalPoint()
-
-    local player_pos = Game.GetPlayer():GetWorldPosition()
-    for _, area in ipairs(self.ristricted_station_area) do
-        local distance = Vector4.Distance(player_pos, Vector4.new(area.x, area.y, area.z, 1))
-        if distance < area.r then
-            if area.name == "E_LINE_FINAL_POINT"  then
-                self.event_obj.is_passed_e_line_final_point = true
-            end
-        end
-    end
-
-end
-
-function Core:UpdateInMetro(delta)
+function Core:UpdateAvoidanceMove(delta)
 
     local player = Game.GetPlayer()
     local local_player_pos = Vector4.new(self.event_obj.prev_player_local_pos.x, self.event_obj.prev_player_local_pos.y, 0.5, 1)

@@ -118,7 +118,7 @@ function HUD:SetChoice(variation)
     hub.id = 69420 + math.random(99999)
 
     if variation == Def.ChoiceVariation.Stand then
-        local icon = TweakDBInterface.GetChoiceCaptionIconPartRecord("ChoiceCaptionParts.MetroIcon")
+        local icon = TweakDBInterface.GetChoiceCaptionIconPartRecord("ChoiceCaptionParts.GetUpIcon")
         local caption_part = gameinteractionsChoiceCaption.new()
         local choice_type = gameinteractionsChoiceTypeWrapper.new()
         caption_part:AddPartFromRecord(icon)
@@ -187,6 +187,11 @@ function HUD:HideChoice()
     end
     self.interaction_ui_base:OnDialogsData(data)
 
+end
+
+function HUD:ShowDangerWarning()
+    local text = GetLocalizedText("LocKey#49558")
+    GameHUD.ShowWarning(text, 0.5)
 end
 
 return HUD
