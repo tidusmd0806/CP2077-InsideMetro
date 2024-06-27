@@ -16,4 +16,9 @@ Def.ChoiceVariation = {
     Sit = 1
 }
 
+Def.ChoiceText = {
+    Stand = 0,
+    Exit = 1
+}
+
 return Def

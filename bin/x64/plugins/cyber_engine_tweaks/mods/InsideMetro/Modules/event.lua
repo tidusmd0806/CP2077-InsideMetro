@@ -25,6 +25,7 @@ function Event:New(player_obj, metro_obj)
     obj.is_in_menu = false
     obj.is_in_popup = false
     obj.is_in_photo = false
+    obj.next_station_num = 1
     return setmetatable(obj, self)
 end
 
@@ -156,7 +157,7 @@ function Event:SetStatus(status)
         self.current_status = Def.State.EnableStand
         self.hud_obj:HideChoice()
         if not self.metro_obj:IsCurrentInvalidStation() then
-            self.hud_obj:ShowChoice(Def.ChoiceVariation.Stand, 1)
+            self.hud_obj:ShowChoice(Def.ChoiceVariation.Stand)
         end
         return true
     elseif self.current_status == Def.State.SitInsideMetro and status == Def.State.WalkInsideMetro then
@@ -173,7 +174,7 @@ function Event:SetStatus(status)
         self.log_obj:Record(LogLevel.Info, "Change Status from WalkInsideMetro to EnableSit")
         self.current_status = Def.State.EnableSit
         self.hud_obj:HideChoice()
-        self.hud_obj:ShowChoice(Def.ChoiceVariation.Sit, 1)
+        self.hud_obj:ShowChoice(Def.ChoiceVariation.Sit)
         return true
     elseif self.current_status == Def.State.WalkInsideMetro and status == Def.State.SitInsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status from WalkInsideMetro to SitInsideMetro")
@@ -388,11 +389,16 @@ end
 
 function Event:CheckNextStation()
     local quest_system = Game.GetQuestsSystem()
+    local active_station = quest_system:GetFact("ue_metro_active_station")
     local next_station_num = quest_system:GetFact("ue_metro_next_station")
     if next_station_num == 0 then
-        self.log_obj:Record(LogLevel.Info, "Detect Next Station")
+        self.log_obj:Record(LogLevel.Info, "Detect Invalid Next Station")
         quest_system:SetFact("ue_metro_next_station", self.metro_obj.next_station_num)
     else
+        -- if active_station ~= next_station_num and next_station_num ~= self.next_station_num then
+        --     self.log_obj:Record(LogLevel.Info, "Detect Next Next Station")
+        --     quest_system:SetFact("ue_metro_next_station", self.metro_obj.next_station_num)
+        -- end
         self.metro_obj.next_station_num = next_station_num
     end
 end
@@ -422,14 +428,6 @@ end
 
 function Event:CheckRestrictedArea()
 
-    -- if self:IsPassedRestrictedBorder() then
-    --     self.log_obj:Record(LogLevel.Info, "Player is passed Restricted Border")
-    --     InsideMetro.is_avoidance_mode = false
-    --     InsideMetro.core_obj:DisableWalkingMetro()
-    --     self.hud_obj:ShowDangerWarning()
-    --     return
-    -- end
-
     if self.metro_obj:IsNextFinalStation() and self.metro_obj:IsInStation() then
         self.log_obj:Record(LogLevel.Info, "Player is in Final Station")
         InsideMetro.is_avoidance_mode = false
@@ -447,9 +445,6 @@ function Event:CheckTouchGround()
     if not self.metro_obj:IsInMetro(local_player_pos) then
         return
     end
-    -- local search_pos_1 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,7,0.2,1))
-    -- local search_pos_2 = self.metro_obj:GetAccurateWorldPosition(Vector4.new(0,-7,0.2,1))
-    -- local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(search_pos_1, search_pos_2, "Static", false, false)
     local search_pos = self.metro_obj:GetAccurateWorldPosition(Vector4.new(local_player_pos.x, local_player_pos.y + 5.0, local_player_pos.z - 0.1, 1))
     local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, search_pos, "Static", false, false)
     if res then
