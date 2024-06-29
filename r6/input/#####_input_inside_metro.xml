@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<bindings>
+    <context name="VehiclePassenger">
+		<include name="CameraMovement" />
+		<include name="VisionActions" />
+		<include name="UIExploration" />
+		<include name="PhotoMode" />
+		<include name="QuickLoadAndSave" />
+		<include name="Items" />
+		<include name="QuestPauseActions" />
+
+		<action name="UseConsumable"		map="UseConsumable_Button" />
+		<action name="Exit" 				map="ExitVehicle_Button" />
+		<action name="TagButton"			map="Tag_Button" /> <!-- HACK FOR VS -->
+		<action name="ToggleVehCamera"		map="VehicleCameraToggle" />
+		<action name="ZoomIn"				map="ZoomIn_Button"/>
+		<action name="ZoomOut"				map="ZoomOut_Button"/>
+		<action name="CameraAim"			map="RangedADS_Button" />
+		<action name="Zoom" 				map="MouseWheel" />
+
+		<action name="UETExit" 				map="DialogConfirm" />		
+		<action name="UETChangePose" 		map="Choice3" />	
+		<action name="UETWindow" 			map="Choice4" />
+	</context>
+</bindings>

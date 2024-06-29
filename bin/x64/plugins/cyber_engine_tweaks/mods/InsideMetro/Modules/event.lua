@@ -26,6 +26,7 @@ function Event:New(player_obj, metro_obj)
     obj.is_in_popup = false
     obj.is_in_photo = false
     obj.next_station_num = 1
+    obj.next_stock_station_num = 0
     return setmetatable(obj, self)
 end
 
@@ -47,6 +48,11 @@ function Event:Uninitialize()
     self.standing_y_offset = 0
     self.player_obj:DeleteWorkspot()
     self.current_status = Def.State.OutsideMetro
+    self.is_in_menu = false
+    self.is_in_popup = false
+    self.is_in_photo = false
+    self.next_station_num = 1
+    self.next_stock_station_num = 0
 
 end
 
@@ -178,6 +184,7 @@ function Event:SetStatus(status)
         return true
     elseif self.current_status == Def.State.WalkInsideMetro and status == Def.State.SitInsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status from WalkInsideMetro to SitInsideMetro")
+        self:CheckSkipStation()
         self.current_status = Def.State.SitInsideMetro
         self.hud_obj:HideChoice()
         return true
@@ -388,19 +395,31 @@ function Event:CheckEnableStand()
 end
 
 function Event:CheckNextStation()
+
     local quest_system = Game.GetQuestsSystem()
-    local active_station = quest_system:GetFact("ue_metro_active_station")
     local next_station_num = quest_system:GetFact("ue_metro_next_station")
     if next_station_num == 0 then
         self.log_obj:Record(LogLevel.Info, "Detect Invalid Next Station")
         quest_system:SetFact("ue_metro_next_station", self.metro_obj.next_station_num)
     else
-        -- if active_station ~= next_station_num and next_station_num ~= self.next_station_num then
-        --     self.log_obj:Record(LogLevel.Info, "Detect Next Next Station")
-        --     quest_system:SetFact("ue_metro_next_station", self.metro_obj.next_station_num)
-        -- end
         self.metro_obj.next_station_num = next_station_num
     end
+
+end
+
+function Event:CheckSkipStation()
+
+    local quest_system = Game.GetQuestsSystem()
+    local active_station_num = quest_system:GetFact("ue_metro_active_station")
+    local next_station_num = quest_system:GetFact("ue_metro_next_station")
+
+    if active_station_num == next_station_num then
+        self.log_obj:Record(LogLevel.Info, "Detect Skip Station. set next station to " .. next_station_num)
+        self.next_stock_station_num = next_station_num
+    else
+        self.next_stock_station_num = 0
+    end
+
 end
 
 function Event:CheckEnableSit()

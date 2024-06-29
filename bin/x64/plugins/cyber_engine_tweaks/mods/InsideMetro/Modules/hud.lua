@@ -8,10 +8,11 @@ function HUD:New(metro_obj)
     obj.log_obj:SetLevel(LogLevel.Info, "HUD")
     obj.metro_obj = metro_obj
     -- static --
-    obj.max_stand_choice_num = 1
+    obj.max_start_choice_num = 1
+    obj.max_stand_choice_num = 2
     obj.max_sit_choice_num = 1
-    -- obj.enable_stand_choice_contents = {{caption = "ChoiceCaptionParts.GetUpIcon", lockey = "LocKey#37918"}, {caption = "ChoiceCaptionParts.MetroIcon", lockey = "LocKey#36196"}}
-    obj.enable_stand_choice_contents = {{caption = "ChoiceCaptionParts.GetUpIcon", lockey = "LocKey#37918"}}
+    obj.enable_start_choice_contents = {{caption = "ChoiceCaptionParts.GetUpIcon", lockey = "LocKey#37918"}}
+    obj.enable_stand_choice_contents = {{caption = "ChoiceCaptionParts.GetUpIcon", lockey = "LocKey#37918"}, {caption = "ChoiceCaptionParts.MetroIcon", lockey = "LocKey#36196"}}
     obj.enable_sit_choice_contents = {{caption = "ChoiceCaptionParts.SitIcon", lockey = "LocKey#522"}}
     -- dynamic --
     obj.show_stand_hint_event = nil

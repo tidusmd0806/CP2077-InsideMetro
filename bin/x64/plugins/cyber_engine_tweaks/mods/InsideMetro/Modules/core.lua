@@ -58,11 +58,12 @@ function Core:SetObserverAction()
                 return
             end
             if action_name == "UETExit" and action_type == "BUTTON_PRESSED" then
-                -- if self.event_obj.hud_obj.selected_choice_index ~= Def.ChoiceText.Exit then
-                    -- consumer:Consume()
-                -- end
-                if self.is_locked_apply_action then
+                if self.event_obj.hud_obj.selected_choice_index ~= Def.ChoiceText.Exit or self.is_locked_apply_action then
                     consumer:Consume()
+                end
+                if self.event_obj.next_stock_station_num ~= 0 then
+                    Game.GetQuestsSystem():SetFact("ue_metro_next_station", self.event_obj.next_stock_station_num)
+                    self.event_obj.next_stock_station_num = 0
                 end
                 self.is_locked_apply_action = true
                 Cron.After(5.5, function()
@@ -117,6 +118,13 @@ function Core:SetObserverAction()
             end
             if action_name == "ChoiceApply" and action_type == "BUTTON_PRESSED" then
                 self:DisableWalkingMetro()
+            end
+        elseif status == Def.State.SitInsideMetro and not self.metro_obj:IsCurrentInvalidStation() then
+            if action_name == "UETExit" and action_type == "BUTTON_PRESSED" then
+                if self.event_obj.next_stock_station_num ~= 0 then
+                    Game.GetQuestsSystem():SetFact("ue_metro_next_station", self.event_obj.next_stock_station_num)
+                    self.event_obj.next_stock_station_num = 0
+                end
             end
         end
 
@@ -200,6 +208,8 @@ function Core:EnableWalkingMetro()
     end
     self.is_switching_pose = true
 
+    self.event_obj.next_stock_station_num = 0
+
     self.log_obj:Record(LogLevel.Info, "EnableWalkingMetro")
     local right_dir = self.metro_obj:GetWorldRight()
     local local_workspot_pos = self.metro_obj:GetPlayerSeatPosition()
@@ -242,6 +252,7 @@ function Core:DisableWalkingMetro()
                 self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: Player is in vehicle")
                 return
             end
+
             self.event_obj:SetStatus(Def.State.SitInsideMetro)
 
             local right_dir = self.metro_obj:GetWorldRight()
