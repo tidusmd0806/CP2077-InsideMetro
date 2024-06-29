@@ -7,88 +7,25 @@ function HUD:New(metro_obj)
     obj.log_obj = Log:New()
     obj.log_obj:SetLevel(LogLevel.Info, "HUD")
     obj.metro_obj = metro_obj
+    -- static --
+    obj.max_start_choice_num = 1
+    obj.max_stand_choice_num = 2
+    obj.max_sit_choice_num = 1
+    obj.enable_start_choice_contents = {{caption = "ChoiceCaptionParts.GetUpIcon", lockey = "LocKey#37918"}}
+    obj.enable_stand_choice_contents = {{caption = "ChoiceCaptionParts.GetUpIcon", lockey = "LocKey#37918"}, {caption = "ChoiceCaptionParts.MetroIcon", lockey = "LocKey#36196"}}
+    obj.enable_sit_choice_contents = {{caption = "ChoiceCaptionParts.SitIcon", lockey = "LocKey#522"}}
     -- dynamic --
     obj.show_stand_hint_event = nil
     obj.hide_stand_hint_event = nil
     obj.show_sit_hint_event = nil
     obj.hide_sit_hint_event = nil
     obj.interaction_hub = nil
-    obj.selected_choice_index = 0
+    obj.selected_choice_index = Def.ChoiceText.Stand
     return setmetatable(obj, self)
 end
 
 function HUD:Initialize()
-    self:SetStandHint()
-    self:SetSitHint()
     self:SetChoice()
-end
-
-function HUD:SetStandHint()
-
-    local hint_table = {{action = "ChoiceApply", source = "itm_stand", holdIndicationType = "FromInputConfig", sortingPriority = 0, enableHoldAnimation = false, localizedLabel = "LocKey#37918"}}
-    self.show_stand_hint_event = UpdateInputHintMultipleEvent.new()
-    self.hide_stand_hint_event = UpdateInputHintMultipleEvent.new()
-    self.show_stand_hint_event.targetHintContainer = CName.new("GameplayInputHelper")
-    self.hide_stand_hint_event.targetHintContainer = CName.new("GameplayInputHelper")
-    for _, hint in ipairs(hint_table) do
-        local input_hint_data = InputHintData.new()
-        input_hint_data.source = CName.new(hint.source)
-        input_hint_data.action = CName.new(hint.action)
-        if hint.holdIndicationType == "FromInputConfig" then
-            input_hint_data.holdIndicationType = inkInputHintHoldIndicationType.FromInputConfig
-        elseif hint.holdIndicationType == "Hold" then
-            input_hint_data.holdIndicationType = inkInputHintHoldIndicationType.Hold
-        elseif hint.holdIndicationType == "Press" then
-            input_hint_data.holdIndicationType = inkInputHintHoldIndicationType.Press
-        else
-            input_hint_data.holdIndicationType = inkInputHintHoldIndicationType.FromInputConfig
-        end
-        input_hint_data.sortingPriority = hint.sortingPriority
-        input_hint_data.enableHoldAnimation = hint.enableHoldAnimation
-        local keys = string.gmatch(hint.localizedLabel, "LocKey#(%d+)")
-        local localizedLabels = {}
-        for key in keys do
-            table.insert(localizedLabels, GetLocalizedText("LocKey#" .. key))
-        end
-        input_hint_data.localizedLabel = table.concat(localizedLabels, "-")
-        self.show_stand_hint_event:AddInputHint(input_hint_data, true)
-        self.hide_stand_hint_event:AddInputHint(input_hint_data, false)
-    end
-
-end
-
-function HUD:SetSitHint()
-
-    local hint_table = {{action = "ChoiceApply", source = "itm_stand", holdIndicationType = "FromInputConfig", sortingPriority = 0, enableHoldAnimation = false, localizedLabel = "LocKey#522"}}
-    self.show_sit_hint_event = UpdateInputHintMultipleEvent.new()
-    self.hide_sit_hint_event = UpdateInputHintMultipleEvent.new()
-    self.show_sit_hint_event.targetHintContainer = CName.new("GameplayInputHelper")
-    self.hide_sit_hint_event.targetHintContainer = CName.new("GameplayInputHelper")
-    for _, hint in ipairs(hint_table) do
-        local input_hint_data = InputHintData.new()
-        input_hint_data.source = CName.new(hint.source)
-        input_hint_data.action = CName.new(hint.action)
-        if hint.holdIndicationType == "FromInputConfig" then
-            input_hint_data.holdIndicationType = inkInputHintHoldIndicationType.FromInputConfig
-        elseif hint.holdIndicationType == "Hold" then
-            input_hint_data.holdIndicationType = inkInputHintHoldIndicationType.Hold
-        elseif hint.holdIndicationType == "Press" then
-            input_hint_data.holdIndicationType = inkInputHintHoldIndicationType.Press
-        else
-            input_hint_data.holdIndicationType = inkInputHintHoldIndicationType.FromInputConfig
-        end
-        input_hint_data.sortingPriority = hint.sortingPriority
-        input_hint_data.enableHoldAnimation = hint.enableHoldAnimation
-        local keys = string.gmatch(hint.localizedLabel, "LocKey#(%d+)")
-        local localizedLabels = {}
-        for key in keys do
-            table.insert(localizedLabels, GetLocalizedText("LocKey#" .. key))
-        end
-        input_hint_data.localizedLabel = table.concat(localizedLabels, "-")
-        self.show_sit_hint_event:AddInputHint(input_hint_data, true)
-        self.hide_sit_hint_event:AddInputHint(input_hint_data, false)
-    end
-
 end
 
 function HUD:ShowStandHint()
@@ -117,23 +54,15 @@ function HUD:SetChoice(variation)
     hub.hubPriority = 1
     hub.id = 69420 + math.random(99999)
 
+    local choice_contents = {}
     if variation == Def.ChoiceVariation.Stand then
-        local icon = TweakDBInterface.GetChoiceCaptionIconPartRecord("ChoiceCaptionParts.GetUpIcon")
-        local caption_part = gameinteractionsChoiceCaption.new()
-        local choice_type = gameinteractionsChoiceTypeWrapper.new()
-        caption_part:AddPartFromRecord(icon)
-        choice_type:SetType(gameinteractionsChoiceType.Selected)
-
-        local choice = gameinteractionsvisListChoiceData.new()
-
-        local lockey = GetLocalizedText("LocKey#37918")
-        choice.localizedName = lockey
-        choice.inputActionName = CName.new("None")
-        choice.captionParts = caption_part
-        choice.type = choice_type
-        table.insert(tmp_list, choice)
+        choice_contents = self.enable_stand_choice_contents
     elseif variation == Def.ChoiceVariation.Sit then
-        local icon = TweakDBInterface.GetChoiceCaptionIconPartRecord("ChoiceCaptionParts.SitIcon")
+        choice_contents = self.enable_sit_choice_contents
+    end
+
+    for _, v in ipairs(choice_contents) do
+        local icon = TweakDBInterface.GetChoiceCaptionIconPartRecord(v.caption)
         local caption_part = gameinteractionsChoiceCaption.new()
         local choice_type = gameinteractionsChoiceTypeWrapper.new()
         caption_part:AddPartFromRecord(icon)
@@ -141,7 +70,7 @@ function HUD:SetChoice(variation)
 
         local choice = gameinteractionsvisListChoiceData.new()
 
-        local lockey = GetLocalizedText("LocKey#522")
+        local lockey = GetLocalizedText(v.lockey)
         choice.localizedName = lockey
         choice.inputActionName = CName.new("None")
         choice.captionParts = caption_part
@@ -154,10 +83,17 @@ function HUD:SetChoice(variation)
     self.interaction_hub = hub
 end
 
-function HUD:ShowChoice(variation, selected_index)
+function HUD:ShowChoice(variation)
 
-    self.selected_choice_index = selected_index
-
+    if variation == Def.ChoiceVariation.Stand then
+        if self.selected_choice_index >= self.max_stand_choice_num then
+            self.selected_choice_index = 0
+        end
+    elseif variation == Def.ChoiceVariation.Sit then
+        if self.selected_choice_index >= self.max_sit_choice_num then
+            self.selected_choice_index = 0
+        end
+    end
     self:SetChoice(variation)
 
     local ui_interaction_define = GetAllBlackboardDefs().UIInteractions
@@ -166,7 +102,7 @@ function HUD:ShowChoice(variation, selected_index)
     interaction_blackboard:SetInt(ui_interaction_define.ActiveChoiceHubID, self.interaction_hub.id)
     local data = interaction_blackboard:GetVariant(ui_interaction_define.DialogChoiceHubs)
     self.dialogIsScrollable = true
-    self.interaction_ui_base:OnDialogsSelectIndex(selected_index - 1)
+    self.interaction_ui_base:OnDialogsSelectIndex(self.selected_choice_index)
     self.interaction_ui_base:OnDialogsData(data)
     self.interaction_ui_base:OnInteractionsChanged()
     self.interaction_ui_base:UpdateListBlackboard()

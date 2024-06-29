@@ -126,14 +126,22 @@ streaming:
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_1_0_3.streamingsector
       expectedNodes: 1062
       nodeDeletions:
+        - index: 689
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [95]
+        - index: 690
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [123]
         - index: 693
           type: worldCollisionNode
           expectedActors: 110
-          actorDeletions: [106,107,108,109]
+          actorDeletions: [67,70]
         - index: 699
           type: worldCollisionNode
           expectedActors: 10
-          actorDeletions: [6,7,8,9]
+          actorDeletions: [4,5]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_2_0_3.streamingsector
       expectedNodes: 2043
       nodeDeletions:
@@ -156,7 +164,7 @@ streaming:
         - index: 1949
           type: worldCollisionNode
           expectedActors: 40
-          actorDeletions: [27,32,37,38,39,]
+          actorDeletions: [27,32,37,38,39]
         - index: 1950
           type: worldCollisionNode
           expectedActors: 118
@@ -172,14 +180,26 @@ streaming:
         - index: 1957
           type: worldCollisionNode
           expectedActors: 103
-          actorDeletions: [97,98,99,100,101]
+          actorDeletions: [97,99,100,101]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-4_3_0_3.streamingsector
       expectedNodes: 2257
       nodeDeletions:
+        - index: 2206
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [35]
+        - index: 2212
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [71]
+        - index: 2232
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [9,10,20,21,50]
         - index: 2234
           type: worldCollisionNode
           expectedActors: 27
-          actorDeletions: [21,22]
+          actorDeletions: [20,21,22]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-9_3_0_2.streamingsector
       expectedNodes: 195
       nodeDeletions:
@@ -221,6 +241,10 @@ streaming:
           type: worldCollisionNode
           expectedActors: 128
           actorDeletions: [74,75,126,127]
+        - index: 1997
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [69,70]
         - index: 2016
           type: worldCollisionNode
           expectedActors: 128
@@ -235,6 +259,10 @@ streaming:
     - path: base\worlds\03_night_city\_compiled\default\exterior_-6_7_0_2.streamingsector
       expectedNodes: 1891
       nodeDeletions:
+        - index: 1827
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [29,112]
         - index: 1868
           type: worldCollisionNode
           expectedActors: 128
@@ -242,7 +270,11 @@ streaming:
         - index: 1882
           type: worldCollisionNode
           expectedActors: 128
-          actorDeletions: [126]
+          actorDeletions: [111,125,126]
+        - index: 1883
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [78]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-7_4_0_2.streamingsector
       expectedNodes: 2991
       nodeDeletions:
@@ -254,6 +286,28 @@ streaming:
           type: worldCollisionNode
           expectedActors: 128
           actorDeletions: [68]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-7_7_0_2.streamingsector
+      expectedNodes: 2268
+      nodeDeletions:
+        - index: 2235
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [17]
+        - index: 2247
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [106,127]
+        - index: 2260
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [69,99,116]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-8_4_0_2.streamingsector
+      expectedNodes: 2128
+      nodeDeletions:
+        - index: 2089
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [83,84]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-8_5_0_2.streamingsector
       expectedNodes: 1563
       nodeDeletions:
@@ -284,6 +338,13 @@ streaming:
           type: worldCollisionNode
           expectedActors: 128
           actorDeletions: [103,110,111]
+    - path: base\worlds\03_night_city\_compiled\default\exterior_-11_15_0_1.streamingsector
+      expectedNodes: 1023
+      nodeDeletions:
+        - index: 1018
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [14]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-12_11_0_1.streamingsector
       expectedNodes: 2120
       nodeDeletions:
@@ -317,6 +378,14 @@ streaming:
     - path: base\worlds\03_night_city\_compiled\default\exterior_-4_2_0_3.streamingsector
       expectedNodes: 2000
       nodeDeletions:
+        - index: 1889
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [102]
+        - index: 1891
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [38]
         - index: 1898
           type: worldCollisionNode
           expectedActors: 6
@@ -329,6 +398,10 @@ streaming:
           type: worldCollisionNode
           expectedActors: 124
           actorDeletions: [122,123]
+        - index: 1924
+          type: worldCollisionNode
+          expectedActors: 128
+          actorDeletions: [21,33,75]
         - index: 1927
           type: worldCollisionNode
           expectedActors: 128
@@ -344,7 +417,7 @@ streaming:
         - index: 1934
           type: worldCollisionNode
           expectedActors: 42
-          actorDeletions: [40,41]
+          actorDeletions: [3,14,40,41]
         - index: 1936
           type: worldCollisionNode
           expectedActors: 59
@@ -356,7 +429,7 @@ streaming:
         - index: 1938
           type: worldCollisionNode
           expectedActors: 40
-          actorDeletions: [35,36]
+          actorDeletions: [36]
         - index: 1940
           type: worldCollisionNode
           expectedActors: 122

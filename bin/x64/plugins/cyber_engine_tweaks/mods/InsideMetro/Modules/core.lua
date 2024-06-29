@@ -24,13 +24,14 @@ function Core:New()
     obj.move_right = false
     obj.move_left = false
     obj.move_yaw = 0
+    obj.is_locked_apply_action = false
     return setmetatable(obj, self)
 end
 
 function Core:Initialize()
 
-    self:SetObserverAction()
     self.event_obj:Initialize()
+    self:SetObserverAction()
 
     Cron.Every(self.event_check_interval, {tick = 1}, function(timer)
         self.event_obj:CheckAllEvents()
@@ -52,11 +53,64 @@ function Core:SetObserverAction()
         end
         local status = self.event_obj:GetStatus()
         if status == Def.State.EnableStand and not self.metro_obj:IsCurrentInvalidStation() then
-            if (action_name == "UETChangePose" and action_type == "BUTTON_PRESSED") or (action_name == "UETWindow" and action_type == "BUTTON_PRESSED") or (action_name == "UETExit" and action_type == "BUTTON_PRESSED") then
+            if (action_name == "UETChangePose" and action_type == "BUTTON_PRESSED") or (action_name == "UETWindow" and action_type == "BUTTON_PRESSED") then
                 consumer:Consume()
+                return
+            end
+            if action_name == "UETExit" and action_type == "BUTTON_PRESSED" then
+                if self.event_obj.hud_obj.selected_choice_index ~= Def.ChoiceText.Exit or self.is_locked_apply_action then
+                    consumer:Consume()
+                end
+                if self.event_obj.next_stock_station_num ~= 0 then
+                    Game.GetQuestsSystem():SetFact("ue_metro_next_station", self.event_obj.next_stock_station_num)
+                    self.event_obj.next_stock_station_num = 0
+                end
+                self.is_locked_apply_action = true
+                Cron.After(5.5, function()
+                    self.is_locked_apply_action = false
+                end)
             end
             if action_name == "ChoiceApply" and action_type == "BUTTON_PRESSED" then
-                self:EnableWalkingMetro()
+                if self.event_obj.hud_obj.selected_choice_index == Def.ChoiceText.Stand then
+                    if self.is_locked_apply_action then
+                        return
+                    end
+                    self.is_locked_apply_action = true
+                    self:EnableWalkingMetro()
+                    Cron.After(5.5, function()
+                        self.is_locked_apply_action = false
+                    end)
+                end
+            elseif action_name == "ChoiceScrollUp" and action_type == "BUTTON_PRESSED" then
+                if self.is_locked_apply_action then
+                    return
+                end
+                self.is_locked_apply_action = true
+                self.event_obj.hud_obj:HideChoice()
+                if self.event_obj.hud_obj.selected_choice_index >= self.event_obj.hud_obj.max_stand_choice_num then
+                    self.event_obj.hud_obj.selected_choice_index = 0
+                else
+                    self.event_obj.hud_obj.selected_choice_index = self.event_obj.hud_obj.selected_choice_index + 1
+                end
+                self.event_obj.hud_obj:ShowChoice(Def.ChoiceVariation.Stand)
+                Cron.After(0.5, function()
+                    self.is_locked_apply_action = false
+                end)
+            elseif action_name == "ChoiceScrollDown" and action_type == "BUTTON_PRESSED" then
+                if self.is_locked_apply_action then
+                    return
+                end
+                self.is_locked_apply_action = true
+                self.event_obj.hud_obj:HideChoice()
+                if self.event_obj.hud_obj.selected_choice_index <= 0 then
+                    self.event_obj.hud_obj.selected_choice_index = self.event_obj.hud_obj.max_stand_choice_num - 1
+                else
+                    self.event_obj.hud_obj.selected_choice_index = self.event_obj.hud_obj.selected_choice_index - 1
+                end
+                self.event_obj.hud_obj:ShowChoice(Def.ChoiceVariation.Stand)
+                Cron.After(0.5, function()
+                    self.is_locked_apply_action = false
+                end)
             end
         elseif status == Def.State.EnableSit then
             if (action_name == "UETChangePose" and action_type == "BUTTON_PRESSED") or (action_name == "UETWindow" and action_type == "BUTTON_PRESSED") or (action_name == "UETExit" and action_type == "BUTTON_PRESSED") then
@@ -64,6 +118,13 @@ function Core:SetObserverAction()
             end
             if action_name == "ChoiceApply" and action_type == "BUTTON_PRESSED" then
                 self:DisableWalkingMetro()
+            end
+        elseif status == Def.State.SitInsideMetro and not self.metro_obj:IsCurrentInvalidStation() then
+            if action_name == "UETExit" and action_type == "BUTTON_PRESSED" then
+                if self.event_obj.next_stock_station_num ~= 0 then
+                    Game.GetQuestsSystem():SetFact("ue_metro_next_station", self.event_obj.next_stock_station_num)
+                    self.event_obj.next_stock_station_num = 0
+                end
             end
         end
 
@@ -147,6 +208,8 @@ function Core:EnableWalkingMetro()
     end
     self.is_switching_pose = true
 
+    self.event_obj.next_stock_station_num = 0
+
     self.log_obj:Record(LogLevel.Info, "EnableWalkingMetro")
     local right_dir = self.metro_obj:GetWorldRight()
     local local_workspot_pos = self.metro_obj:GetPlayerSeatPosition()
@@ -189,6 +252,7 @@ function Core:DisableWalkingMetro()
                 self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: Player is in vehicle")
                 return
             end
+
             self.event_obj:SetStatus(Def.State.SitInsideMetro)
 
             local right_dir = self.metro_obj:GetWorldRight()
