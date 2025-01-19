@@ -5,6 +5,8 @@ streaming:
       nodeDeletions:
         - index: 1771
           type: worldCompiledCommunityAreaNode
+        - index: 11001
+          type: worldCompiledCommunityAreaNode
     # c line
     # rainbow
     - path: base\worlds\03_night_city\_compiled\default\exterior_-12_-10_0_0.streamingsector
