@@ -1,9 +1,11 @@
 streaming:
   sectors:
     - path: base\worlds\03_night_city\_compiled\default\always_loaded_1.streamingsector
-      expectedNodes: 15087
+      expectedNodes: 15090
       nodeDeletions:
         - index: 1771
+          type: worldCompiledCommunityAreaNode
+        - index: 11001
           type: worldCompiledCommunityAreaNode
     # c line
     # rainbow
