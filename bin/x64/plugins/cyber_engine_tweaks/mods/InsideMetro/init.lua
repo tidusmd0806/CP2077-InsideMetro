@@ -16,7 +16,7 @@ local Debug = require('Debug/debug.lua')
 
 InsideMetro = {
 	description = "Inside The Metro",
-	version = "1.1.1",
+	version = "1.2.0",
     is_debug_mode = false,
     is_avoidance_mode = false,
     -- version check
