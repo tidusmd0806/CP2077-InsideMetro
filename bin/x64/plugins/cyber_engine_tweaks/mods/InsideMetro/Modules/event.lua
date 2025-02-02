@@ -281,19 +281,6 @@ function Event:IsOnGround()
     return self.is_on_ground
 end
 
-function Event:IsPassedRestrictedBorder()
-
-    local player_pos = Game.GetPlayer():GetWorldPosition()
-    for _, point in ipairs(Data.Border) do
-        local distance = Vector4.Distance(player_pos, Vector4.new(point.x, point.y, point.z, 1))
-        if distance < point.r then
-            return true
-        end
-    end
-    return false
-
-end
-
 function Event:CheckGetOff()
 
     if not self.metro_obj:IsMountedPlayer() then
@@ -398,8 +385,15 @@ function Event:CheckNextStation()
 
     local quest_system = Game.GetQuestsSystem()
     local next_station_num = quest_system:GetFact("ue_metro_next_station")
+    local active_station_num = quest_system:GetFact("ue_metro_active_station")
     if next_station_num == 0 then
         self.log_obj:Record(LogLevel.Info, "Detect Invalid Next Station")
+        quest_system:SetFact("ue_metro_next_station", self.metro_obj.next_station_num)
+    elseif next_station_num == 1 and self.metro_obj.next_station_num >= 20 then
+        self.log_obj:Record(LogLevel.Info, "Detect Invalid Next Station in moddfy line reversed")
+        quest_system:SetFact("ue_metro_next_station", self.metro_obj.next_station_num)
+    elseif next_station_num == 1 and self.metro_obj.next_station_num == 2 and active_station_num == 20 then
+        self.log_obj:Record(LogLevel.Info, "Detect Invalid Next Station in moddfy line")
         quest_system:SetFact("ue_metro_next_station", self.metro_obj.next_station_num)
     else
         self.metro_obj.next_station_num = next_station_num
