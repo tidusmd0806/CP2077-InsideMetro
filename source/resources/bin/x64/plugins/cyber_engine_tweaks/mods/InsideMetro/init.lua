@@ -16,11 +16,11 @@ local Debug = require('Debug/debug.lua')
 
 InsideMetro = {
 	description = "Inside The Metro",
-	version = "1.2.0",
+	version = "1.2.2",
     is_debug_mode = false,
     is_avoidance_mode = false,
     -- version check
-    cet_required_version = 32.2, -- 1.32.2
+    cet_required_version = 36.0, -- 1.36.0
     cet_version_num = 0,
 }
 
@@ -56,7 +56,6 @@ registerForEvent('onUpdate', function(delta)
 end)
 
 function InsideMetro:CheckDependencies()
-
     -- Check Cyber Engine Tweaks Version
     local cet_version_str = GetVersion()
     local cet_version_major, cet_version_minor = cet_version_str:match("1.(%d+)%.*(%d*)")
@@ -66,9 +65,11 @@ function InsideMetro:CheckDependencies()
         print("Inside The Metro Mod requires Cyber Engine Tweaks version 1." .. InsideMetro.cet_required_version .. " or higher.")
         return false
     end
-
     return true
+end
 
+function InsideMetro:ToggleDebugMode()
+    InsideMetro.is_debug_mode = not InsideMetro.is_debug_mode
 end
 
 return InsideMetro
