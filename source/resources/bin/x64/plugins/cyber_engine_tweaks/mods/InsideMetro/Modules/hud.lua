@@ -102,12 +102,16 @@ function HUD:ShowChoice(variation)
     interaction_blackboard:SetInt(ui_interaction_define.ActiveChoiceHubID, self.interaction_hub.id)
     local data = interaction_blackboard:GetVariant(ui_interaction_define.DialogChoiceHubs)
     self.dialogIsScrollable = true
-    self.interaction_ui_base:OnDialogsSelectIndex(self.selected_choice_index)
-    self.interaction_ui_base:OnDialogsData(data)
-    self.interaction_ui_base:OnInteractionsChanged()
-    self.interaction_ui_base:UpdateListBlackboard()
-    self.interaction_ui_base:OnDialogsActivateHub(self.interaction_hub.id)
-
+    local result, err = pcall(function()
+        self.interaction_ui_base:OnDialogsSelectIndex(self.selected_choice_index)
+        self.interaction_ui_base:OnDialogsData(data)
+        self.interaction_ui_base:OnInteractionsChanged()
+        self.interaction_ui_base:UpdateListBlackboard()
+        self.interaction_ui_base:OnDialogsActivateHub(self.interaction_hub.id)
+    end)
+    if not result then
+        self.log_obj:Record(LogLevel.Trace, "Failed to show choice: " .. tostring(err))
+    end
 end
 
 function HUD:HideChoice()
@@ -121,7 +125,12 @@ function HUD:HideChoice()
     if self.interaction_ui_base == nil then
         return
     end
-    self.interaction_ui_base:OnDialogsData(data)
+    local result, err = pcall(function()
+        self.interaction_ui_base:OnDialogsData(data)
+    end)
+    if not result then
+        self.log_obj:Record(LogLevel.Trace, "Failed to hide choice: " .. tostring(err))
+    end
 
 end
 

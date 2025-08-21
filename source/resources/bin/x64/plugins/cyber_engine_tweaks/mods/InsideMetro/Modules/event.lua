@@ -27,6 +27,16 @@ function Event:New(player_obj, metro_obj)
     obj.is_in_photo = false
     obj.next_station_num = 1
     obj.next_stock_station_num = 0
+    -- Inertia-related fields
+    obj.velocity_history = {}
+    obj.current_velocity = Vector4.new(0, 0, 0, 0)
+    obj.last_ground_position = metro_obj.default_position
+    obj.airborne_time = 0
+    obj.max_velocity_history = Def.Inertia.max_velocity_history
+    obj.metro_velocity_influence = Def.Inertia.metro_velocity_influence
+    -- Vehicle velocity tracking
+    obj.vehicle_position_history = {}
+    obj.last_vehicle_position = nil
     return setmetatable(obj, self)
 end
 
@@ -46,6 +56,11 @@ function Event:Uninitialize()
     self.is_invisible_collision = false
     self.is_first_standing = false
     self.standing_y_offset = 0
+    -- Clear velocity history
+    self.velocity_history = {}
+    self.current_velocity = Vector4.new(0, 0, 0, 0)
+    self.last_vehicle_position = nil
+    self.airborne_time = 0
     self.player_obj:DeleteWorkspot()
     self.current_status = Def.State.OutsideMetro
     self.is_in_menu = false
@@ -467,21 +482,104 @@ function Event:CheckTouchGround()
             return
         end
     end
-    InsideMetro.is_avoidance_mode = false
+    
+    -- Vehicle velocity tracking for inertia calculation
+    local current_vehicle_pos = self.metro_obj:GetWorldPosition()
+    
     if self.is_on_ground then
+        -- Track vehicle movement instead of player movement
+        if self.last_vehicle_position ~= nil then
+            local vehicle_velocity = Vector4.new(
+                current_vehicle_pos.x - self.last_vehicle_position.x,
+                current_vehicle_pos.y - self.last_vehicle_position.y,
+                0, 0
+            )
+            
+            -- Add vehicle velocity to history
+            table.insert(self.velocity_history, vehicle_velocity)
+            if #self.velocity_history > self.max_velocity_history then
+                table.remove(self.velocity_history, 1)
+            end
+            
+            -- Calculate current average vehicle velocity
+            local sum_x, sum_y = 0, 0
+            for _, v in ipairs(self.velocity_history) do
+                sum_x = sum_x + v.x
+                sum_y = sum_y + v.y
+            end
+            self.current_velocity = Vector4.new(
+                sum_x / #self.velocity_history,
+                sum_y / #self.velocity_history,
+                0, 0
+            )
+        end
+        
+        -- Update vehicle position history
+        self.last_vehicle_position = current_vehicle_pos
+        
         self.prev_player_local_pos = local_player_pos
+        self.last_ground_position = local_player_pos
+        self.airborne_time = 0
+        
         if self.prev_player_local_pos.y < -7 then
             self.log_obj:Record(LogLevel.Trace, "Is too back position")
             self.prev_player_local_pos.y = -6
             self.prev_player_local_pos.x = 0
+            self.last_ground_position = self.prev_player_local_pos
         end
+        InsideMetro.is_avoidance_mode = false
         return
     end
-    self.log_obj:Record(LogLevel.Trace, "Is not touching ground")
-    local prev_pos = Vector4.new(self.prev_player_local_pos.x, self.prev_player_local_pos.y, local_player_pos.z - 0.1, 1)
-    local pos = self.metro_obj:GetAccurateWorldPosition(prev_pos)
-    local angle = player:GetWorldOrientation():ToEulerAngles()
-    Game.GetTeleportationFacility():Teleport(player, pos, angle)
+    
+    -- Apply inertia when airborne
+    self.airborne_time = self.airborne_time + Def.Inertia.teleport_interval
+    
+    -- Get metro forward direction
+    local metro_forward = self.metro_obj:GetWorldForward()
+    local metro_speed = self.metro_obj:GetSpeed()
+    
+    -- Decay factor for inertia (weakens over time)
+    local decay_factor = math.max(Def.Inertia.min_decay_factor, 1.0 - (self.airborne_time * Def.Inertia.decay_rate))
+    
+    -- Convert vehicle velocity to local coordinate system for better control
+    local vehicle_velocity_local = Vector4.new(0, 0, 0, 0)
+    if self.current_velocity ~= nil and (self.current_velocity.x ~= 0 or self.current_velocity.y ~= 0) then
+        -- Convert world velocity to local metro coordinates
+        local temp_world_pos = Vector4.new(self.current_velocity.x, self.current_velocity.y, 0, 1)
+        vehicle_velocity_local = self.metro_obj:ChangeWorldPosToLocal(temp_world_pos)
+    end
+    
+    -- Consider metro inertia (add inertia in forward direction)
+    local metro_inertia_y = metro_speed * self.metro_velocity_influence * Def.Inertia.teleport_interval
+    
+    -- Additional forward bias to prevent backward drift
+    local forward_bias = 0.0
+    if vehicle_velocity_local.y < 0 then  -- If vehicle moving backward relative to metro
+        forward_bias = math.abs(vehicle_velocity_local.y) * 0.5  -- Add forward compensation
+    end
+    
+    -- Calculate new position with applied vehicle-based inertia
+    local inertia_pos = Vector4.new(
+        self.last_ground_position.x + (vehicle_velocity_local.x * self.airborne_time * decay_factor),
+        self.last_ground_position.y + (vehicle_velocity_local.y * self.airborne_time * decay_factor) + metro_inertia_y + forward_bias,
+        local_player_pos.z - 0.1, -- Lower slightly to land on ground
+        1
+    )
+    
+    -- Check if position is within metro bounds
+    if self.metro_obj:IsInMetro(inertia_pos) then
+        self.log_obj:Record(LogLevel.Trace, "Applying vehicle-based inertia to airborne player")
+        local pos = self.metro_obj:GetAccurateWorldPosition(inertia_pos)
+        local angle = player:GetWorldOrientation():ToEulerAngles()
+        Game.GetTeleportationFacility():Teleport(player, pos, angle)
+    else
+        -- Teleport to safe position if out of bounds
+        self.log_obj:Record(LogLevel.Warning, "Inertia position out of bounds, using safe position")
+        local prev_pos = Vector4.new(self.prev_player_local_pos.x, self.prev_player_local_pos.y, local_player_pos.z - 0.1, 1)
+        local pos = self.metro_obj:GetAccurateWorldPosition(prev_pos)
+        local angle = player:GetWorldOrientation():ToEulerAngles()
+        Game.GetTeleportationFacility():Teleport(player, pos, angle)
+    end
 
 end
 
