@@ -303,40 +303,4 @@ function Core:KeepWorkspotSeatPostion(local_pos, angle)
 
 end
 
-function Core:UpdateAvoidanceMove(delta)
-
-    local player = Game.GetPlayer()
-    local local_player_pos = Vector4.new(self.event_obj.prev_player_local_pos.x, self.event_obj.prev_player_local_pos.y, 0.5, 1)
-    local world_player_pos = self.metro_obj:GetAccurateWorldPosition(local_player_pos)
-    local move_speed = 1.5
-    local forward_dir = player:GetWorldForward()
-    local right_dir = player:GetWorldRight()
-    local x,y = world_player_pos.x, world_player_pos.y
-    if self.move_forward then
-        x = x + forward_dir.x * move_speed * delta
-        y = y + forward_dir.y * move_speed * delta
-    end
-    if self.move_backward then
-        x = x - forward_dir.x * move_speed * delta
-        y = y - forward_dir.y * move_speed * delta
-    end
-    if self.move_right then
-        x = x + right_dir.x * move_speed * delta
-        y = y + right_dir.y * move_speed * delta
-    end
-    if self.move_left then
-        x = x - right_dir.x * move_speed * delta
-        y = y - right_dir.y * move_speed * delta
-    end
-    local new_pos = Vector4.new(x, y, world_player_pos.z, 1)
-    local local_player_pos = self.metro_obj:GetAccurateLocalPosition(new_pos)
-    if self.metro_obj:IsInMetro(local_player_pos) then
-        self.event_obj.prev_player_local_pos = local_player_pos
-    else
-        new_pos = world_player_pos
-    end
-    local angle = self.metro_obj.measurement_npc_entity:GetWorldOrientation():ToEulerAngles()
-    Game.GetTeleportationFacility():Teleport(player, new_pos, EulerAngles.new(angle.roll, angle.pitch, GetPlayer():GetWorldYaw() + self.move_yaw))
-end
-
 return Core

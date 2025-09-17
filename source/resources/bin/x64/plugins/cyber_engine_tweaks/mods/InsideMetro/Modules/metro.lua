@@ -7,7 +7,7 @@ function Metro:New()
     obj.log_obj = Log:New()
     obj.log_obj:SetLevel(LogLevel.Info, "Metro")
     -- static --
-    obj.domain = {x_max = 2.0, x_min = -2.0, y_max = 9.0, y_min = -9.0, z_max = 1.6, z_min = -0.2}
+    obj.domain = {x_max = 10.0, x_min = -10.0, y_max = 17.0, y_min = -17.0, z_max = 8.6, z_min = -8.2}
     obj.default_position = Vector4.new(0, 0, 0.8, 1)
     obj.seat_area_radius = 1.0
     -- dynamic --

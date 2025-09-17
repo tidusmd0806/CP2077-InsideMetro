@@ -41,27 +41,7 @@ end
 function Debug:SetObserver()
 
     if not self.is_set_observer then
-        -- reserved
-        -- Observe("UISystem", "QueueEvent", function(this, evt)
-        --     local evt_name =  evt:ToString()
-        --     if string.find(evt_name, "InputHint") then
-        --         print('QueueEvent')
-        --         print(evt_name)
-        --         if string.find(evt_name, "Delete") then
-        --             print(evt.source.value)
-        --         elseif string.find(evt_name, "Update") then
-        --             print(evt.data.source.value)
-        --             print(evt.targetHintContainer.value)
-        --         end
-        --     end
-        -- end)
-        -- Observe("QuestsSystem", "SetFact", function(this, factName, value)
-        --     if string.find(factName.value, "ue_metro") then
-        --         print('SetFact')
-        --         print(factName.value)
-        --         print(value)
-        --     end
-        -- end)
+        -- reserved  
     end
     self.is_set_observer = true
 

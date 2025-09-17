@@ -16,9 +16,8 @@ local Debug = require('Debug/debug.lua')
 
 InsideMetro = {
 	description = "Inside The Metro",
-	version = "1.2.3",
+	version = "1.3.0",
     is_debug_mode = false,
-    is_avoidance_mode = false,
     -- version check
     cet_required_version = 36.0, -- 1.36.0
     cet_version_num = 0,
@@ -50,9 +49,6 @@ end)
 
 registerForEvent('onUpdate', function(delta)
     Cron.Update(delta)
-    if InsideMetro.is_avoidance_mode then
-        InsideMetro.core_obj:UpdateAvoidanceMove(delta)
-    end
 end)
 
 function InsideMetro:CheckDependencies()
