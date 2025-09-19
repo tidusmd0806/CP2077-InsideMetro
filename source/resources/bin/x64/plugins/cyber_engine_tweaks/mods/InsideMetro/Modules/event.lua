@@ -27,16 +27,6 @@ function Event:New(player_obj, metro_obj)
     obj.is_in_photo = false
     obj.next_station_num = 1
     obj.next_stock_station_num = 0
-    -- Inertia-related fields
-    obj.velocity_history = {}
-    obj.current_velocity = Vector4.new(0, 0, 0, 0)
-    obj.last_ground_position = metro_obj.default_position
-    obj.airborne_time = 0
-    obj.max_velocity_history = Def.Inertia.max_velocity_history
-    obj.metro_velocity_influence = Def.Inertia.metro_velocity_influence
-    -- Vehicle velocity tracking
-    obj.vehicle_position_history = {}
-    obj.last_vehicle_position = nil
     return setmetatable(obj, self)
 end
 
@@ -56,11 +46,6 @@ function Event:Uninitialize()
     self.is_invisible_collision = false
     self.is_first_standing = false
     self.standing_y_offset = 0
-    -- Clear velocity history
-    self.velocity_history = {}
-    self.current_velocity = Vector4.new(0, 0, 0, 0)
-    self.last_vehicle_position = nil
-    self.airborne_time = 0
     self.player_obj:DeleteWorkspot()
     self.current_status = Def.State.OutsideMetro
     self.is_in_menu = false
@@ -334,7 +319,7 @@ end
 
 function Event:CheckEnableStand()
     if not self.is_ready then
-        if self.metro_obj:GetSpeed() >= 1 then
+        if self.metro_obj:GetSpeed() >= 3 then
             self.is_ready = true
             local active_station = self.metro_obj:GetActiveStation()
             for _, track_info in ipairs(self.metro_obj:GetTrackList(active_station)) do

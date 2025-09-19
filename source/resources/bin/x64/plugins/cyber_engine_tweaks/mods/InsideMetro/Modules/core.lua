@@ -127,66 +127,7 @@ function Core:SetObserverAction()
                 end
             end
         end
-
-        -- refer to free fly mod (https://www.nexusmods.com/cyberpunk2077/mods/780)
-        if action_name == 'Forward' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_forward = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_forward = false
-            end
-        elseif action_name == 'Back' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_backward = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_backward = false
-            end
-        elseif action_name == 'Right' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_right = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_right = false
-            end
-        elseif action_name == 'Left' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_left = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_left = false
-            end
-        elseif action_name == "MoveX" then
-            if action_value < 0 then
-                self.move_right = false
-                self.move_left = true
-            else
-                self.move_right = true
-                self.move_left = false
-            end
-            if action_value == 0 then
-                self.move_right = false
-                self.move_left = false
-            end
-        elseif action_name == "MoveY" then
-            if action_value < 0 then
-                self.move_forward = false
-                self.move_backward = true
-            else
-                self.move_forward = true
-                self.move_backward = false
-            end
-            if action_value == 0 then
-                self.move_forward = false
-                self.move_backward = false
-            end
-        elseif action_name == "CameraMouseX" then
-            local sens = Game.GetSettingsSystem():GetVar("/controls/fppcameramouse", "FPP_MouseX"):GetValue() / 2.9
-            self.move_yaw = - (action_value / 35) * sens
-        elseif action_name == "right_stick_x" then
-            local x = action:GetValue(action)
-            local sens = Game.GetSettingsSystem():GetVar("/controls/fppcamerapad", "FPP_PadX"):GetValue() / 10
-            self.move_yaw = - x * 1.7 * sens
-        end
     end)
-
 end
 
 function Core:SetFreezeMode(is_freeze)
@@ -202,7 +143,6 @@ function Core:SetFreezeMode(is_freeze)
 end
 
 function Core:EnableWalkingMetro()
-
     if self.is_switching_pose then
         return
     end
@@ -226,14 +166,15 @@ function Core:EnableWalkingMetro()
     Cron.After(self.wait_time_after_standup, function()
         self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
         self:SetFreezeMode(true)
-        self.metro_obj:Unmount()
-        self.event_obj:SetStatus(Def.State.WalkInsideMetro)
-        self.is_switching_pose = false
         Cron.After(0.5, function()
-            self:SetFreezeMode(false)
+            self.metro_obj:Unmount()
+            self.event_obj:SetStatus(Def.State.WalkInsideMetro)
+            self.is_switching_pose = false
+            Cron.After(1.0, function()
+                self:SetFreezeMode(false)
+            end)
         end)
     end)
-
 end
 
 function Core:DisableWalkingMetro()
@@ -245,7 +186,7 @@ function Core:DisableWalkingMetro()
 
     self.log_obj:Record(LogLevel.Info, "DisableWalkingMetro")
     self:SetFreezeMode(true)
-    Cron.After(0.1, function()
+    Cron.After(0.5, function()
         self.metro_obj:Mount()
         Cron.Every(0.01, {tick = 1}, function(timer)
             if Game.GetPlayer():GetMountedVehicle() == nil then
@@ -265,7 +206,7 @@ function Core:DisableWalkingMetro()
             end
             self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: PlayPose")
             self.player_obj:PlayPose(self.sit_down_anim, workspot_pos, workspot_angle)
-            Cron.After(0.5, function()
+            Cron.After(3.5, function()
                 self:SetFreezeMode(false)
                 self.is_switching_pose = false
             end)
