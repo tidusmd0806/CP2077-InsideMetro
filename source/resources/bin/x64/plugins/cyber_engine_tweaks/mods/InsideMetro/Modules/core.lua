@@ -29,24 +29,19 @@ function Core:New()
 end
 
 function Core:Initialize()
-
     self.event_obj:Initialize()
     self:SetObserverAction()
 
     Cron.Every(self.event_check_interval, {tick = 1}, function(timer)
         self.event_obj:CheckAllEvents()
     end)
-
 end
 
 function Core:SetObserverAction()
-
     Observe("PlayerPuppet", "OnAction", function(this, action, consumer)
         local action_name = action:GetName(action).value
 		local action_type = action:GetType(action).value
         local action_value = action:GetValue(action)
-
-        self.log_obj:Record(LogLevel.Debug, "Action Name: " .. action_name .. " Type: " .. action_type .. " Value: " .. action_value)
 
         if self.event_obj:IsInPouse() then
             return
@@ -127,66 +122,7 @@ function Core:SetObserverAction()
                 end
             end
         end
-
-        -- refer to free fly mod (https://www.nexusmods.com/cyberpunk2077/mods/780)
-        if action_name == 'Forward' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_forward = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_forward = false
-            end
-        elseif action_name == 'Back' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_backward = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_backward = false
-            end
-        elseif action_name == 'Right' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_right = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_right = false
-            end
-        elseif action_name == 'Left' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_left = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_left = false
-            end
-        elseif action_name == "MoveX" then
-            if action_value < 0 then
-                self.move_right = false
-                self.move_left = true
-            else
-                self.move_right = true
-                self.move_left = false
-            end
-            if action_value == 0 then
-                self.move_right = false
-                self.move_left = false
-            end
-        elseif action_name == "MoveY" then
-            if action_value < 0 then
-                self.move_forward = false
-                self.move_backward = true
-            else
-                self.move_forward = true
-                self.move_backward = false
-            end
-            if action_value == 0 then
-                self.move_forward = false
-                self.move_backward = false
-            end
-        elseif action_name == "CameraMouseX" then
-            local sens = Game.GetSettingsSystem():GetVar("/controls/fppcameramouse", "FPP_MouseX"):GetValue() / 2.9
-            self.move_yaw = - (action_value / 35) * sens
-        elseif action_name == "right_stick_x" then
-            local x = action:GetValue(action)
-            local sens = Game.GetSettingsSystem():GetVar("/controls/fppcamerapad", "FPP_PadX"):GetValue() / 10
-            self.move_yaw = - x * 1.7 * sens
-        end
     end)
-
 end
 
 function Core:SetFreezeMode(is_freeze)
@@ -202,7 +138,6 @@ function Core:SetFreezeMode(is_freeze)
 end
 
 function Core:EnableWalkingMetro()
-
     if self.is_switching_pose then
         return
     end
@@ -233,11 +168,9 @@ function Core:EnableWalkingMetro()
             self:SetFreezeMode(false)
         end)
     end)
-
 end
 
 function Core:DisableWalkingMetro()
-
     if self.is_switching_pose then
         return
     end
@@ -273,11 +206,9 @@ function Core:DisableWalkingMetro()
             Cron.Halt(timer)
         end)
     end)
-
 end
 
 function Core:KeepWorkspotSeatPostion(local_pos, angle)
-
     Cron.Every(0.01, {tick = 1}, function(timer)
         local workspot_entity = self.player_obj:GetWorkspotEntity()
         if workspot_entity == nil then
@@ -300,7 +231,6 @@ function Core:KeepWorkspotSeatPostion(local_pos, angle)
             return
         end
     end)
-
 end
 
 return Core
