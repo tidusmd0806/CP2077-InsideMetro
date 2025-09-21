@@ -27,6 +27,16 @@ function Event:New(player_obj, metro_obj)
     obj.is_in_photo = false
     obj.next_station_num = 1
     obj.next_stock_station_num = 0
+    -- Inertia-related fields
+    obj.velocity_history = {}
+    obj.current_velocity = Vector4.new(0, 0, 0, 0)
+    obj.last_ground_position = metro_obj.default_position
+    obj.airborne_time = 0
+    obj.max_velocity_history = Def.Inertia.max_velocity_history
+    obj.metro_velocity_influence = Def.Inertia.metro_velocity_influence
+    -- Vehicle velocity tracking
+    obj.vehicle_position_history = {}
+    obj.last_vehicle_position = nil
     return setmetatable(obj, self)
 end
 
@@ -46,6 +56,11 @@ function Event:Uninitialize()
     self.is_invisible_collision = false
     self.is_first_standing = false
     self.standing_y_offset = 0
+    -- Clear velocity history
+    self.velocity_history = {}
+    self.current_velocity = Vector4.new(0, 0, 0, 0)
+    self.last_vehicle_position = nil
+    self.airborne_time = 0
     self.player_obj:DeleteWorkspot()
     self.current_status = Def.State.OutsideMetro
     self.is_in_menu = false
@@ -250,13 +265,11 @@ function Event:CheckAllEvents()
     elseif self.current_status == Def.State.EnableSit then
         self:CheckEnableSit()
         self:CheckInvalidPosition()
-        self:CheckTouchGround()
         self:CheckRestrictedArea()
         self:CheckNextStation()
     elseif self.current_status == Def.State.WalkInsideMetro then
         self:CheckEnableSit()
         self:CheckInvalidPosition()
-        self:CheckTouchGround()
         self:CheckRestrictedArea()
         self:CheckNextStation()
     elseif self.current_status == Def.State.Invalid then
@@ -282,7 +295,6 @@ function Event:IsOnGround()
 end
 
 function Event:CheckGetOff()
-
     if not self.metro_obj:IsMountedPlayer() then
         self.log_obj:Record(LogLevel.Info, "Detect Get Off Metro")
         self.current_status = Def.State.OutsideMetro
@@ -291,11 +303,9 @@ function Event:CheckGetOff()
         self.metro_obj:Uninitialize()
         return
     end
-
 end
 
 function Event:CheckInsideMetro()
-
     if self.metro_obj:IsMountedPlayer() and not self.is_initial then
         self.is_initial = true
         Cron.Every(0.1, {tick = 1}, function(timer)
@@ -310,7 +320,6 @@ function Event:CheckInsideMetro()
             Cron.Halt(timer)
         end)
     end
-
 end
 
 function Event:CheckOutsideMetro()
@@ -324,7 +333,6 @@ function Event:CheckOutsideMetro()
 end
 
 function Event:CheckEnableStand()
-
     if not self.is_ready then
         if self.metro_obj:GetSpeed() >= 1 then
             self.is_ready = true
@@ -378,11 +386,9 @@ function Event:CheckEnableStand()
         self.log_obj:Record(LogLevel.Debug, "Detect Disable Stand")
         self:SetStatus(Def.State.SitInsideMetro)
     end
-
 end
 
 function Event:CheckNextStation()
-
     local quest_system = Game.GetQuestsSystem()
     local next_station_num = quest_system:GetFact("ue_metro_next_station")
     local active_station_num = quest_system:GetFact("ue_metro_active_station")
@@ -398,11 +404,9 @@ function Event:CheckNextStation()
     else
         self.metro_obj.next_station_num = next_station_num
     end
-
 end
 
 function Event:CheckSkipStation()
-
     local quest_system = Game.GetQuestsSystem()
     local active_station_num = quest_system:GetFact("ue_metro_active_station")
     local next_station_num = quest_system:GetFact("ue_metro_next_station")
@@ -413,76 +417,33 @@ function Event:CheckSkipStation()
     else
         self.next_stock_station_num = 0
     end
-
 end
 
 function Event:CheckEnableSit()
-
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
-    if self.metro_obj:IsInSeatArea(player_local_pos) and self.metro_obj:GetSpeed() >= 1 and not InsideMetro.is_avoidance_mode then
+    if self.metro_obj:IsInSeatArea(player_local_pos) and self.metro_obj:GetSpeed() >= 1 then
         self.log_obj:Record(LogLevel.Debug, "Player is in Seat Area")
         self:SetStatus(Def.State.EnableSit)
     else
         self.log_obj:Record(LogLevel.Debug, "Player is not in Seat Area")
         self:SetStatus(Def.State.WalkInsideMetro)
     end
-
 end
 
 function Event:CheckInvalidPosition()
-
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
     if not self.metro_obj:IsInMetro(player_local_pos) then
         self.log_obj:Record(LogLevel.Warning, "Player is not in Metro")
         self.metro_obj:TeleportToSafePosition()
     end
-
 end
 
 function Event:CheckRestrictedArea()
-
     if self.metro_obj:IsNextFinalStation() and self.metro_obj:IsInStation() then
         self.log_obj:Record(LogLevel.Info, "Player is in Final Station")
-        InsideMetro.is_avoidance_mode = false
         InsideMetro.core_obj:DisableWalkingMetro()
         return
     end
-
-end
-
-function Event:CheckTouchGround()
-
-    local player = Game.GetPlayer()
-    local player_pos = player:GetWorldPosition()
-    local local_player_pos = self.metro_obj:GetAccurateLocalPosition(player_pos)
-    if not self.metro_obj:IsInMetro(local_player_pos) then
-        return
-    end
-    local search_pos = self.metro_obj:GetAccurateWorldPosition(Vector4.new(local_player_pos.x, local_player_pos.y + 5.0, local_player_pos.z - 0.1, 1))
-    local res, trace = Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(player_pos, search_pos, "Static", false, false)
-    if res then
-        if not Game.GetWorkspotSystem():IsActorInWorkspot(player) then
-            self.log_obj:Record(LogLevel.Trace, "Touch Concrete")
-            InsideMetro.is_avoidance_mode = true
-            return
-        end
-    end
-    InsideMetro.is_avoidance_mode = false
-    if self.is_on_ground then
-        self.prev_player_local_pos = local_player_pos
-        if self.prev_player_local_pos.y < -7 then
-            self.log_obj:Record(LogLevel.Trace, "Is too back position")
-            self.prev_player_local_pos.y = -6
-            self.prev_player_local_pos.x = 0
-        end
-        return
-    end
-    self.log_obj:Record(LogLevel.Trace, "Is not touching ground")
-    local prev_pos = Vector4.new(self.prev_player_local_pos.x, self.prev_player_local_pos.y, local_player_pos.z - 0.1, 1)
-    local pos = self.metro_obj:GetAccurateWorldPosition(prev_pos)
-    local angle = player:GetWorldOrientation():ToEulerAngles()
-    Game.GetTeleportationFacility():Teleport(player, pos, angle)
-
 end
 
 return Event

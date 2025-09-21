@@ -29,24 +29,19 @@ function Core:New()
 end
 
 function Core:Initialize()
-
     self.event_obj:Initialize()
     self:SetObserverAction()
 
     Cron.Every(self.event_check_interval, {tick = 1}, function(timer)
         self.event_obj:CheckAllEvents()
     end)
-
 end
 
 function Core:SetObserverAction()
-
     Observe("PlayerPuppet", "OnAction", function(this, action, consumer)
         local action_name = action:GetName(action).value
 		local action_type = action:GetType(action).value
         local action_value = action:GetValue(action)
-
-        self.log_obj:Record(LogLevel.Debug, "Action Name: " .. action_name .. " Type: " .. action_type .. " Value: " .. action_value)
 
         if self.event_obj:IsInPouse() then
             return
@@ -127,71 +122,12 @@ function Core:SetObserverAction()
                 end
             end
         end
-
-        -- refer to free fly mod (https://www.nexusmods.com/cyberpunk2077/mods/780)
-        if action_name == 'Forward' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_forward = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_forward = false
-            end
-        elseif action_name == 'Back' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_backward = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_backward = false
-            end
-        elseif action_name == 'Right' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_right = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_right = false
-            end
-        elseif action_name == 'Left' then
-            if action_type == 'BUTTON_PRESSED' then
-                self.move_left = true
-            elseif action_type == 'BUTTON_RELEASED' then
-                self.move_left = false
-            end
-        elseif action_name == "MoveX" then
-            if action_value < 0 then
-                self.move_right = false
-                self.move_left = true
-            else
-                self.move_right = true
-                self.move_left = false
-            end
-            if action_value == 0 then
-                self.move_right = false
-                self.move_left = false
-            end
-        elseif action_name == "MoveY" then
-            if action_value < 0 then
-                self.move_forward = false
-                self.move_backward = true
-            else
-                self.move_forward = true
-                self.move_backward = false
-            end
-            if action_value == 0 then
-                self.move_forward = false
-                self.move_backward = false
-            end
-        elseif action_name == "CameraMouseX" then
-            local sens = Game.GetSettingsSystem():GetVar("/controls/fppcameramouse", "FPP_MouseX"):GetValue() / 2.9
-            self.move_yaw = - (action_value / 35) * sens
-        elseif action_name == "right_stick_x" then
-            local x = action:GetValue(action)
-            local sens = Game.GetSettingsSystem():GetVar("/controls/fppcamerapad", "FPP_PadX"):GetValue() / 10
-            self.move_yaw = - x * 1.7 * sens
-        end
     end)
-
 end
 
 function Core:SetFreezeMode(is_freeze)
     if is_freeze then
-        Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.0)
+        Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.01)
         TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", true, true)
         TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), true)
     else
@@ -202,7 +138,6 @@ function Core:SetFreezeMode(is_freeze)
 end
 
 function Core:EnableWalkingMetro()
-
     if self.is_switching_pose then
         return
     end
@@ -233,11 +168,9 @@ function Core:EnableWalkingMetro()
             self:SetFreezeMode(false)
         end)
     end)
-
 end
 
 function Core:DisableWalkingMetro()
-
     if self.is_switching_pose then
         return
     end
@@ -245,7 +178,7 @@ function Core:DisableWalkingMetro()
 
     self.log_obj:Record(LogLevel.Info, "DisableWalkingMetro")
     self:SetFreezeMode(true)
-    Cron.After(0.1, function()
+    Cron.After(0.01, function()
         self.metro_obj:Mount()
         Cron.Every(0.01, {tick = 1}, function(timer)
             if Game.GetPlayer():GetMountedVehicle() == nil then
@@ -273,11 +206,9 @@ function Core:DisableWalkingMetro()
             Cron.Halt(timer)
         end)
     end)
-
 end
 
 function Core:KeepWorkspotSeatPostion(local_pos, angle)
-
     Cron.Every(0.01, {tick = 1}, function(timer)
         local workspot_entity = self.player_obj:GetWorkspotEntity()
         if workspot_entity == nil then
@@ -300,43 +231,6 @@ function Core:KeepWorkspotSeatPostion(local_pos, angle)
             return
         end
     end)
-
-end
-
-function Core:UpdateAvoidanceMove(delta)
-
-    local player = Game.GetPlayer()
-    local local_player_pos = Vector4.new(self.event_obj.prev_player_local_pos.x, self.event_obj.prev_player_local_pos.y, 0.5, 1)
-    local world_player_pos = self.metro_obj:GetAccurateWorldPosition(local_player_pos)
-    local move_speed = 1.5
-    local forward_dir = player:GetWorldForward()
-    local right_dir = player:GetWorldRight()
-    local x,y = world_player_pos.x, world_player_pos.y
-    if self.move_forward then
-        x = x + forward_dir.x * move_speed * delta
-        y = y + forward_dir.y * move_speed * delta
-    end
-    if self.move_backward then
-        x = x - forward_dir.x * move_speed * delta
-        y = y - forward_dir.y * move_speed * delta
-    end
-    if self.move_right then
-        x = x + right_dir.x * move_speed * delta
-        y = y + right_dir.y * move_speed * delta
-    end
-    if self.move_left then
-        x = x - right_dir.x * move_speed * delta
-        y = y - right_dir.y * move_speed * delta
-    end
-    local new_pos = Vector4.new(x, y, world_player_pos.z, 1)
-    local local_player_pos = self.metro_obj:GetAccurateLocalPosition(new_pos)
-    if self.metro_obj:IsInMetro(local_player_pos) then
-        self.event_obj.prev_player_local_pos = local_player_pos
-    else
-        new_pos = world_player_pos
-    end
-    local angle = self.metro_obj.measurement_npc_entity:GetWorldOrientation():ToEulerAngles()
-    Game.GetTeleportationFacility():Teleport(player, new_pos, EulerAngles.new(angle.roll, angle.pitch, GetPlayer():GetWorldYaw() + self.move_yaw))
 end
 
 return Core
