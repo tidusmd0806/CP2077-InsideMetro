@@ -127,7 +127,7 @@ end
 
 function Core:SetFreezeMode(is_freeze)
     if is_freeze then
-        Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.0)
+        Game.GetTimeSystem():SetTimeDilation(CName.new("pause"), 0.01)
         TimeDilationHelper.SetTimeDilationWithProfile(Game.GetPlayer(), "radialMenu", true, true)
         TimeDilationHelper.SetIgnoreTimeDilationOnLocalPlayerZero(Game.GetPlayer(), true)
     else
@@ -178,7 +178,7 @@ function Core:DisableWalkingMetro()
 
     self.log_obj:Record(LogLevel.Info, "DisableWalkingMetro")
     self:SetFreezeMode(true)
-    Cron.After(0.1, function()
+    Cron.After(0.01, function()
         self.metro_obj:Mount()
         Cron.Every(0.01, {tick = 1}, function(timer)
             if Game.GetPlayer():GetMountedVehicle() == nil then
