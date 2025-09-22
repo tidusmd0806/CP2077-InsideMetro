@@ -697,7 +697,7 @@ streaming:
               orientation: [ 0.023, -0.078, 0.957, -0.277 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-5_4_0_3.streamingsector
       expectedNodes: 640
-      nodeDeletions:
+      nodeMutations:
         - index: 632
           type: worldCollisionNode
           expectedInstances: 108
@@ -707,7 +707,7 @@ streaming:
               orientation: [ -0.001, 0.005, 0.964, -0.264 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-5_5_0_3.streamingsector
       expectedNodes: 2362
-      nodeDeletions:
+      nodeMutations:
         - index: 2360
           type: worldCollisionNode
           expectedInstances: 93
@@ -728,7 +728,7 @@ streaming:
     ## 21 - 22
     - path: base\worlds\03_night_city\_compiled\default\exterior_-13_19_0_1.streamingsector
       expectedNodes: 846
-      nodeDeletions:
+      nodeMutations:
         - index: 828
           type: worldCollisionNode
           expectedInstances: 26
