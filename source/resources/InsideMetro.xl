@@ -1239,55 +1239,47 @@ streaming:
         - index: 104
           type: worldCollisionNode
           expectedInstances: 32
-          instanceDeletions: 
-            - index: 30
+          instanceDeletions: [30]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_-3_0_2.streamingsector
       expectedNodes: 1014
       nodeDeletions:
         - index: 983
           type: worldCollisionNode
           expectedInstances: 22
-          instanceDeletions: 
-            - index: 21
+          instanceDeletions: [21]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-6_-5_0_1.streamingsector
       expectedNodes: 416
       nodeDeletions:
         - index: 413
           type: worldCollisionNode
           expectedInstances: 11
-          instanceDeletions: 
-            - index: 10
+          instanceDeletions: [10]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-7_-5_0_1.streamingsector
       expectedNodes: 1484
       nodeDeletions:
         - index: 1468
           type: worldCollisionNode
           expectedInstances: 52
-          instanceDeletions: 
-            - index: 47
+          instanceDeletions: [47]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-4_-2_0_2.streamingsector
       expectedNodes: 4268
       nodeDeletions:
         - index: 4093
           type: worldCollisionNode
           expectedInstances: 17
-          instanceDeletions: 
-            - index: 13
+          instanceDeletions: [13]
         - index: 4156
           type: worldCollisionNode
           expectedInstances: 64
-          instanceDeletions: 
-            - index: 61
+          instanceDeletions: [61]
         - index: 4160
           type: worldCollisionNode
           expectedInstances: 12
-          instanceDeletions: 
-            - index: 11
+          instanceDeletions: [11]
         - index: 4179
           type: worldCollisionNode
           expectedInstances: 35
-          instanceDeletions: 
-            - index: 34
+          instanceDeletions: [34]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-7_-4_0_1.streamingsector
       expectedNodes: 1380
       nodeMutations:
@@ -1327,21 +1319,18 @@ streaming:
         - index: 1187
           type: worldCollisionNode
           expectedInstances: 3
-          instanceDeletions: 
-            - index: 2
+          instanceDeletions: [2]
         - index: 1230
           type: worldCollisionNode
           expectedInstances: 47
-          instanceDeletions: 
-            - index: 46
+          instanceDeletions: [46]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-9_-3_0_1.streamingsector
       expectedNodes: 1638
       nodeDeletions:
         - index: 1608
           type: worldCollisionNode
           expectedInstances: 6
-          instanceDeletions: 
-            - index: 5
+          instanceDeletions: [5]
     ### D Line
     ## 10 - 14
     ## Nothing to change
