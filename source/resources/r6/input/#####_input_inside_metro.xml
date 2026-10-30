@@ -18,7 +18,7 @@
 		<action name="CameraAim"			map="RangedADS_Button" />
 		<action name="Zoom" 				map="MouseWheel" />
 
-		<action name="UETExit" 				map="DialogConfirm" />		
+		<action name="UETExit" 				map="call_popup" />		
 		<action name="UETChangePose" 		map="Choice3" />	
 		<action name="UETWindow" 			map="Choice4" />
 	</context>
