@@ -1,14 +1,15 @@
+# Inside Metro 1.4.0
 streaming:
   sectors:
     ### Delete Metro Objects
     - path: base\worlds\03_night_city\_compiled\default\always_loaded_1.streamingsector
-      expectedNodes: 15117
+      expectedNodes: 15111
       nodeDeletions:
         # {city_center_heywood_metro_community}
         - index: 1771
           type: worldCompiledCommunityAreaNode
         # {westbrook_metro_community}
-        - index: 11021
+        - index: 11268
           type: worldCompiledCommunityAreaNode
     ### A Line 
     ## 2 - 3
@@ -16,7 +17,7 @@ streaming:
       expectedNodes: 2000
       nodeMutations:
         - index: 1940
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 122
           instanceMutations:
             - index: 119
@@ -29,7 +30,7 @@ streaming:
       expectedNodes: 1525
       nodeMutations:
         - index: 1513
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 103
@@ -39,7 +40,7 @@ streaming:
       expectedNodes: 2120
       nodeMutations:
         - index: 2058
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 8
@@ -52,17 +53,17 @@ streaming:
       expectedNodes: 2044
       nodeMutations:
         - index: 1997
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 70
               position: [ -1420.377, 1452.595, 26.335, 0.0 ]
               orientation: [ 0.000, 0.000, -0.737, 0.676 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_2_0_3.streamingsector
-      expectedNodes: 2043
+      expectedNodes: 2042
       nodeMutations:
-        - index: 1948
-          type: worldCollisionNode
+        - index: 1947
+          type: worldCookedCollisionNode
           expectedInstances: 37
           instanceMutations:
             - index: 31
@@ -71,8 +72,8 @@ streaming:
             - index: 32
               position: [ -1415.085, 1442.998, 40.898, 0.0 ]
               orientation: [ -0.010, -0.007, 0.569, 0.822 ]
-        - index: 1954
-          type: worldCollisionNode
+        - index: 1953
+          type: worldCookedCollisionNode
           expectedInstances: 73
           instanceMutations:
             - index: 31
@@ -93,10 +94,10 @@ streaming:
               position: [ -1370.487, 1550.132, 39.337, 0.0 ]
               orientation: [ 0.000, 0.000, -0.609, 0.793 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_3_0_3.streamingsector
-      expectedNodes: 2094
+      expectedNodes: 2095
       nodeMutations:
-        - index: 2084
-          type: worldCollisionNode
+        - index: 2085
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 72
@@ -112,7 +113,7 @@ streaming:
       expectedNodes: 2506
       nodeMutations:
         - index: 2489
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 101
@@ -123,7 +124,7 @@ streaming:
       expectedNodes: 195
       nodeMutations:
         - index: 141
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 5
           instanceMutations:
             - index: 3
@@ -133,14 +134,14 @@ streaming:
       expectedNodes: 166
       nodeMutations:
         - index: 151
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 6
           instanceMutations:
             - index: 5
               position: [ -2085.129, 864.366, 64.323, 0.0 ]
               orientation: [ 0.015, -0.0, -0.012, 1.0 ]
         - index: 154
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 42
           instanceMutations:
             - index: 41
@@ -150,7 +151,7 @@ streaming:
       expectedNodes: 197
       nodeMutations:
         - index: 195
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 4
           instanceMutations:
             - index: 3
@@ -160,7 +161,7 @@ streaming:
       expectedNodes: 2128
       nodeMutations:
         - index: 2070
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 0
@@ -170,21 +171,21 @@ streaming:
               position: [ -2024.558, 1154.806, 9.9, 0.0 ]
               orientation: [ 0.000, 0.000, -0.999, 0.035 ]
         - index: 2089
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 84
               position: [ -2024.780, 1131.781, 10.206, 0.0 ]
               orientation: [ 0.000, 0.000, -0.998, -0.061 ]
         - index: 2110
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 90
               position: [ -2032.607, 1231.898, 9.621, 0.0 ]
               orientation: [ 0.000, 0.000, -0.999, 0.052 ]
         - index: 2124
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 65
@@ -194,14 +195,14 @@ streaming:
       expectedNodes: 1525
       nodeMutations:
         - index: 1472
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 24
               position: [ -1739.169, 1479.137, 23.973, 0.0 ]
               orientation: [ 0.000, 0.000, 0.676, 0.737 ]
         - index: 1482
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 41
@@ -211,21 +212,21 @@ streaming:
       expectedNodes: 2000
       nodeMutations:
         - index: 1889
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 102
               position: [ -1999.905, 1480.812, 20.636, 0.0 ]
               orientation: [ 0.0, 0.0, 0.875, 0.485 ]
         - index: 1891
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 38
               position: [ -2019.561, 1442.252, 22.955, 0.0 ]
               orientation: [ 0.0, 0.0, 0.999, -0.052 ]
         - index: 1899
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 124
@@ -235,7 +236,7 @@ streaming:
               position: [ -1732.182, 1473.996, 36.771, 0.0 ]
               orientation: [ -0.023, -0.02, 0.688, 0.744 ]
         - index: 1930
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 65
           instanceMutations:
             - index: 55
@@ -245,7 +246,7 @@ streaming:
               position: [ -2040.456, 1210.898, 37.356, 0.0 ]
               orientation: [ 0.005, 0.0, 0.059, 0.998 ]
         - index: 1933
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 117
           instanceMutations:
             - index: 107
@@ -255,7 +256,7 @@ streaming:
               position: [ -1791.696, 1481.167, 34.208, 0.0 ]
               orientation: [ -0.012, -0.011, 0.682, 0.749 ]
         - index: 1934
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 42
           instanceMutations:
             - index: 3
@@ -271,7 +272,7 @@ streaming:
               position: [ -2018.734, 1327.239, 37.329, 0.0 ]
               orientation: [ -0.001, 0.0, -0.136, 0.991 ]
         - index: 1936
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 59
           instanceMutations:
             - index: 55
@@ -284,7 +285,7 @@ streaming:
               position: [ -1922.998, 1492.533, 34.723, 0.0 ]
               orientation: [ 0.0, 0.0, -0.940, 0.342 ]
         - index: 1941
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 103
           instanceMutations:
             - index: 94
@@ -294,14 +295,14 @@ streaming:
       expectedNodes: 1563
       nodeMutations:
         - index: 1519
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 41
               position: [ -1809.899, 1485.325, 20.973, 0.0 ]
               orientation: [ 0.000, 0.000, 0.676, 0.737 ]
         - index: 1552
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 6
@@ -315,14 +316,14 @@ streaming:
       expectedNodes: 3350
       nodeMutations:
         - index: 3336
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 13
               position: [ -1139.199, 246.405, -3.812, 0.0 ]
               orientation: [ 0.000, 0.000, 0.454, 0.891 ]
         - index: 3339
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 1
           instanceMutations:
             - index: 0
@@ -332,7 +333,7 @@ streaming:
       expectedNodes: 2276
       nodeMutations:
         - index: 2133
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 27
           instanceMutations:
             - index: 23
@@ -345,28 +346,28 @@ streaming:
               position: [ -1179.785, 109.079, 68.628, 0.0 ]
               orientation: [ 0.000, 0.000, 0.834, 0.552]
         - index: 2156
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 1
           instanceMutations:
             - index: 0
               position: [ -1186.732, 109.017, 68.987, 0.0 ]
               orientation: [ 0.000, 0.000, -0.552, 0.834 ]
         - index: 2157
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 1
           instanceMutations:
             - index: 0
               position: [ -1186.732, 109.017, 68.987, 0.0 ]
               orientation: [ 0.000, 0.000, -0.552, 0.834 ]
         - index: 2188
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 1
           instanceMutations:
             - index: 0
               position: [ -1167.113, -20.796, 68.987, 0.0 ]
               orientation: [ 0.000, 0.000, -0.552, 0.834 ]
         - index: 2189
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 1
           instanceMutations:
             - index: 0
@@ -378,21 +379,21 @@ streaming:
       expectedNodes: 2207
       nodeMutations:
         - index: 2127
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 30
           instanceMutations:
             - index: 27
               position: [ -1212.337, -49.087, 68.535, 0.0 ]
               orientation: [ 0.0, 0.0, -0.552, 0.834]
         - index: 2170
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 1
           instanceMutations:
             - index: 0
               position: [ -1205.994, -37.119, 72.689, 0.0 ]
               orientation: [ 0.0, 0.0, -0.552, 0.834]
         - index: 2171
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 1
           instanceMutations:
             - index: 0
@@ -403,7 +404,7 @@ streaming:
       expectedNodes: 1774
       nodeMutations:
         - index: 1762
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 1
           instanceMutations:
             - index: 0
@@ -415,7 +416,7 @@ streaming:
       expectedNodes: 3562
       nodeMutations:
         - index: 3559
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 24
@@ -425,7 +426,7 @@ streaming:
       expectedNodes: 1726
       nodeMutations:
         - index: 1688
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 41
           instanceMutations:
             - index: 3
@@ -435,21 +436,21 @@ streaming:
               position: [ -1090.179, -537.533, 71.365, 0.0 ]
               orientation: [ 0.0, 0.0, -0.056, 0.998]
         - index: 1694
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 27
           instanceMutations:
             - index: 1
               position: [ -1079.575, -711.231, 73.364, 0.0 ]
               orientation: [ 0.0, 0.0, 0.114, 0.993]
         - index: 1704
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 16
           instanceMutations:
             - index: 1
               position: [ -1045.668, -897.031, 67.765, 0.0 ]
               orientation: [ 0.0, 0.0, -0.184, 0.983]
         - index: 1710
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 16
           instanceMutations:
             - index: 3
@@ -460,7 +461,7 @@ streaming:
       expectedNodes: 2668
       nodeMutations:
         - index: 2663
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 83
@@ -470,7 +471,7 @@ streaming:
               position: [ -1060.282, -1457.267, 32.106, 0.0 ]
               orientation: [ 0.0, 0.0, 0.952, 0.307]
         - index: 2667
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 85
@@ -482,7 +483,7 @@ streaming:
       expectedNodes: 1478
       nodeMutations:
         - index: 1427
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 51
@@ -492,7 +493,7 @@ streaming:
       expectedNodes: 872
       nodeMutations:
         - index: 855
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 82
@@ -502,13 +503,13 @@ streaming:
               position: [ -1005.491, -1333.311, 32.508, 0.0 ]
               orientation: [ 0.0, 0.0, -0.292, 0.956]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-2_-2_0_3.streamingsector
-      expectedNodes: 1061
+      expectedNodes: 1063
       nodeMutations:
-        - index: 1053
-          type: worldCollisionNode
+        - index: 1044
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
-            - index: 91
+            - index: 106
               position: [ -594.157, -764.258, 25.988, 0.0 ]
               orientation: [ 0.0, 0.0, -0.317, 0.948]
     
@@ -517,17 +518,17 @@ streaming:
       expectedNodes: 1023
       nodeMutations:
         - index: 1018
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 14
               position: [ -1394.97522, 1924.34094, 8.400238, 0.0 ]
               orientation: [ 0.000, 0.000, 0.74604547, -0.665895104 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_3_0_3.streamingsector
-      expectedNodes: 2094
+      expectedNodes: 2095
       nodeMutations:
-        - index: 2067
-          type: worldCollisionNode
+        - index: 2068
+          type: worldCookedCollisionNode
           expectedInstances: 42
           instanceMutations:
             - index: 14
@@ -536,8 +537,8 @@ streaming:
             - index: 16
               position: [ -1348.254, 1799.949, 31.144, 0.0 ]
               orientation: [ 0.000, 0.000, -0.608761489, 0.793353319 ]
-        - index: 2078
-          type: worldCollisionNode
+        - index: 2079
+          type: worldCookedCollisionNode
           expectedInstances: 74
           instanceMutations: 
             - index: 37
@@ -546,32 +547,32 @@ streaming:
             - index: 40
               position: [ -1370.61548, 1913.00427, 28.6443405, 0.0 ]
               orientation: [ 0.000, 0.000, -0.608761489, 0.793353319 ]
-        - index: 2079
-          type: worldCollisionNode
+        - index: 2080
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 86
               position: [ -1343.31445, 1862.61841, 29.7083206, 0.0 ]
               orientation: [ 0.000, 0.000, -0.608761489, 0.793353319 ]
-        - index: 2082
-          type: worldCollisionNode
+        - index: 2083
+          type: worldCookedCollisionNode
           expectedInstances: 101
           instanceMutations: 
             - index: 95
               position: [ -1494.89099, 1914.47192, 35.5271378, 0.0 ]
               orientation: [ 0.000, 0.000, -0.608761489, 0.793353319 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-6_7_0_2.streamingsector
-      expectedNodes: 1890
+      expectedNodes: 1891
       nodeMutations:
-        - index: 1867
-          type: worldCollisionNode
+        - index: 1868
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 43
               position: [ -1428.02393, 1928.1051, 9.1520462, 0.0 ]
               orientation: [ 0.000, 0.000, 0.74604547, -0.665895104 ]
-        - index: 1881
-          type: worldCollisionNode
+        - index: 1882
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 125
@@ -580,8 +581,8 @@ streaming:
             - index: 126
               position: [ -1341.93018, 1893.29224, 8.6401062, 0.0 ]
               orientation: [ 0.000, 0.000, 0.984807789, -0.173648298 ]
-        - index: 1882
-          type: worldCollisionNode
+        - index: 1883
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 78
@@ -591,14 +592,14 @@ streaming:
       expectedNodes: 2257
       nodeMutations:
         - index: 2206
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 125
               position: [ -1713.17358, 1900.58301, 15.2909393, 0.0 ]
               orientation: [ 0.000, 0.000, 0.267238408, 0.963630497 ]
         - index: 2237
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 79
           instanceMutations: 
             - index: 73
@@ -620,7 +621,7 @@ streaming:
       expectedNodes: 2268
       nodeMutations:
         - index: 2240
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 4
           instanceMutations:
             - index: 0
@@ -630,14 +631,14 @@ streaming:
               position: [ -1789.13208, 2048.92432, 34.10746, 0.0 ]
               orientation: [-0.00015865895, 0.000636035053, 0.970267773, -0.242033318 ]
         - index: 2247
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 106
               position: [ -1617.16919, 1900.44604, 23.4781494, 0.0 ]
               orientation: [0, 0, 0.783361495, 0.621566474 ]
         - index: 2260
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 116
@@ -647,21 +648,21 @@ streaming:
       expectedNodes: 3208
       nodeMutations:
         - index: 3129
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 20
               position: [ -1862.0968, 2189.13403, 12.2909393, 0.0 ]
               orientation: [ 0.000, 0.000, 0.240364, 0.970682859 ]
         - index: 3131
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 97
               position: [ -1898.246, 2257.121, 12.291, 0.0 ]
               orientation: [ 0.000, 0.000, 0.240364, 0.970682859 ]
         - index: 3144
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
           - index: 32
@@ -672,7 +673,7 @@ streaming:
       expectedNodes: 3575
       nodeMutations:
         - index: 3556
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 59
@@ -682,14 +683,14 @@ streaming:
       expectedNodes: 1458
       nodeMutations:
         - index: 1447
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 124
           instanceMutations: 
             - index: 123
               position: [ -2041.085, 2506.803, 50.579, 0.0 ]
               orientation: [ -0.001, 0.002, 0.963, -0.268 ]
         - index: 1448
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 78
           instanceMutations: 
             - index: 77
@@ -699,7 +700,7 @@ streaming:
       expectedNodes: 640
       nodeMutations:
         - index: 632
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 108
           instanceMutations: 
             - index: 106
@@ -709,14 +710,14 @@ streaming:
       expectedNodes: 2362
       nodeMutations:
         - index: 2360
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 93
           instanceMutations: 
             - index: 88
               position: [ -2121.0925, 2751.797, 49.694, 0.0 ]
               orientation: [ -0.018, 0.052, 0.965, -0.325 ]
         - index: 2361
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 40
           instanceMutations: 
             - index: 34
@@ -730,17 +731,17 @@ streaming:
       expectedNodes: 846
       nodeMutations:
         - index: 828
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 26
           instanceMutations: 
-            - index: 25
+            - index: 24
               position: [ -1649.769, 2545.619, 22.040, 0.0 ]
               orientation: [ 0, 0, -0.887, 0.462 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-4_4_0_3.streamingsector
       expectedNodes: 1458
       nodeMutations:
         - index: 1441
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 100
           instanceMutations: 
             - index: 94
@@ -753,21 +754,21 @@ streaming:
       expectedNodes: 2616
       nodeMutations:
         - index: 2609
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 92
           instanceMutations: 
             - index: 91
               position: [ -1421.578, 2352.781, 45.109, 0.0 ]
               orientation: [ -0.006, 0.017, 0.948, -0.316 ]
         - index: 2610
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 20
           instanceMutations: 
             - index: 18
               position: [ -1326.946, 2199.723, 45.918, 0.0 ]
               orientation: [ -0.003, 0.011, 0.962, -0.274 ]
         - index: 2611
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 110
           instanceMutations:
             - index: 95
@@ -780,14 +781,14 @@ streaming:
               position: [ -1483.741, 2420.490, 38.475, 0.0 ]
               orientation: [ -0.017, 0.040, 0.919, -0.392 ]
         - index: 2612
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 81
           instanceMutations: 
             - index: 79
               position: [ -1528.773, 2459.730, 33.114, 0.0 ]
               orientation: [ 0.021, -0.043, -0.900, 0.433 ]
         - index: 2614
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 87
           instanceMutations: 
             - index: 84
@@ -797,7 +798,7 @@ streaming:
               position: [ -1388.767, 2302.571, 45.735, 0.0 ]
               orientation: [ 0.0, -0.0, 0.962, -0.272 ]
         - index: 2615
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 100
           instanceMutations: 
             - index: 96
@@ -810,24 +811,24 @@ streaming:
       expectedNodes: 2417
       nodeMutations:
         - index: 2401
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 25
               position: [ -1499.396, 2441.471, 14.246, 0.0 ]
               orientation: [ 0.0, 0.0, 0.992, -0.129 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_3_0_3.streamingsector
-      expectedNodes: 2094
+      expectedNodes: 2095
       nodeMutations:
-        - index: 2080
-          type: worldCollisionNode
+        - index: 2081
+          type: worldCookedCollisionNode
           expectedInstances: 30
           instanceMutations: 
             - index: 27
               position: [ -1156.753, 1999.131, 57.061, 0.0 ]
               orientation: [ 0.012, -0.02, -0.860, 0.510 ]
-        - index: 2088
-          type: worldCollisionNode
+        - index: 2089
+          type: worldCookedCollisionNode
           expectedInstances: 33
           instanceMutations: 
             - index: 29
@@ -837,7 +838,7 @@ streaming:
       expectedNodes: 2389
       nodeMutations:
         - index: 2385
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 46
           instanceMutations: 
             - index: 44
@@ -847,7 +848,7 @@ streaming:
       expectedNodes: 936
       nodeMutations:
         - index: 877
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 25
           instanceMutations: 
             - index: 21
@@ -857,7 +858,7 @@ streaming:
               position: [ -808.522, 1961.887, 66.799, 0.0 ]
               orientation: [ 0.007, -0.007, -0.707, 0.707 ]
         - index: 891
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 16
           instanceMutations: 
             - index: 10
@@ -873,37 +874,37 @@ streaming:
     ### B Line
     ## 15 - 17
     - path: base\worlds\03_night_city\_compiled\default\exterior_-1_-2_0_3.streamingsector
-      expectedNodes: 1653
+      expectedNodes: 1659
       nodeMutations:
-        - index: 1631
-          type: worldCollisionNode
+        - index: 1637
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 70
               position: [ -428.538, -715.364, 14.465, 0.0 ]
               orientation: [ 0.00, 0.00, -0.997, 0.078 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-2_-3_0_2.streamingsector
-      expectedNodes: 1522
+      expectedNodes: 1609
       nodeMutations:
-        - index: 1521
-          type: worldCollisionNode
+        - index: 1608
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
-            - index: 53
+            - index: 66
               position: [ -441.078, -555.141, 14.465, 0.0 ]
               orientation: [ 0.00, 0.00, 0.951, 0.308 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-1_-1_0_3.streamingsector
-      expectedNodes: 942
+      expectedNodes: 941
       nodeMutations:
-        - index: 925
-          type: worldCollisionNode
+        - index: 924
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 127
               position: [ -252.962, -382.128, 26.194, 0.0 ]
               orientation: [ 0.00, 0.00, 0.826, 0.564 ]
-        - index: 936
-          type: worldCollisionNode
+        - index: 935
+          type: worldCookedCollisionNode
           expectedInstances: 109
           instanceMutations: 
             - index: 91
@@ -912,8 +913,8 @@ streaming:
             - index: 92
               position: [ -324.098, -409.887, 26.194, 0.0 ]
               orientation: [ 0.00, 0.00, 0.826, 0.564 ]
-        - index: 938
-          type: worldCollisionNode
+        - index: 937
+          type: worldCookedCollisionNode
           expectedInstances: 122
           instanceMutations: 
             - index: 54
@@ -926,14 +927,14 @@ streaming:
       expectedNodes: 1936
       nodeMutations:
         - index: 1909
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 85
               position: [ 58.473, -61.677, 25.066, 0.0 ]
               orientation: [ 0.00, 0.00, 0.951, 0.308 ]
         - index: 1916
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 59
@@ -944,7 +945,7 @@ streaming:
       expectedNodes: 3102
       nodeMutations:
         - index: 3063
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 27
@@ -957,7 +958,7 @@ streaming:
       expectedNodes: 668
       nodeMutations:
         - index: 660
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 72
@@ -967,7 +968,7 @@ streaming:
       expectedNodes: 1509
       nodeMutations:
         - index: 1483
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 54
@@ -977,7 +978,7 @@ streaming:
       expectedNodes: 2594
       nodeMutations:
         - index: 2567
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 37
@@ -985,41 +986,41 @@ streaming:
               orientation: [ 0.00, 0.00, 0.462, 0.887 ]
     ## 5 - 16
     - path: base\worlds\03_night_city\_compiled\default\exterior_-2_2_0_3.streamingsector
-      expectedNodes: 1511
+      expectedNodes: 1510
       nodeMutations:
-        - index: 1259
-          type: worldCollisionNode
+        - index: 1258
+          type: worldCookedCollisionNode
           expectedInstances: 123
           instanceMutations: 
             - index: 113
               position: [ -864.553, 1371.376, 54.884, 0.0 ]
               orientation: [ 0.00, 0.00, 0.853, -0.522 ]
-        - index: 1262
-          type: worldCollisionNode
+        - index: 1261
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 23
               position: [ -758.902, 1305.430, 69.428, 0.0 ]
               orientation: [ 0.00, 0.00, 0.446, 0.895 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_2_0_3.streamingsector
-      expectedNodes: 2043
+      expectedNodes: 2042
       nodeMutations:
-        - index: 1940
-          type: worldCollisionNode
+        - index: 1939
+          type: worldCookedCollisionNode
           expectedInstances: 49
           instanceMutations: 
             - index: 48
               position: [ -1070.578, 1396.453, 64.986, 0.0 ]
               orientation: [ -0.012, -0.013, 0.728, 0.685 ]
-        - index: 1945
-          type: worldCollisionNode
+        - index: 1944
+          type: worldCookedCollisionNode
           expectedInstances: 5
           instanceMutations: 
             - index: 4
               position: [ -1010.901, 1391.562, 66.453, 0.0 ]
               orientation: [ -0.009, -0.007, 0.649, 0.760 ]
-        - index: 1949
-          type: worldCollisionNode
+        - index: 1948
+          type: worldCookedCollisionNode
           expectedInstances: 40
           instanceMutations:
             - index: 32
@@ -1031,8 +1032,8 @@ streaming:
             - index: 38
               position: [ -1298.069, 1366.601, 54.149, 0.0 ]
               orientation: [ -0.021, -0.020, 0.680, 0.733 ]
-        - index: 1950
-          type: worldCollisionNode
+        - index: 1949
+          type: worldCookedCollisionNode
           expectedInstances: 118
           instanceMutations: 
             - index: 114
@@ -1042,7 +1043,7 @@ streaming:
       expectedNodes: 2044
       nodeMutations:
         - index: 1983
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 74
@@ -1052,7 +1053,7 @@ streaming:
               position: [ -1337.898, 1376.650, 35.784, 0.0 ]
               orientation: [ 0.0, 0.0, -0.737, 0.676 ]
         - index: 2016
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 101
@@ -1060,10 +1061,10 @@ streaming:
               orientation: [ 0.0, 0.0, 0.999, 0.052 ]
     ## 7- 16
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_2_0_3.streamingsector
-      expectedNodes: 2043
+      expectedNodes: 2042
       nodeMutations:
-        - index: 1956
-          type: worldCollisionNode
+        - index: 1955
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 122
@@ -1073,14 +1074,14 @@ streaming:
       expectedNodes: 2000
       nodeMutations:
         - index: 1898
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 6
           instanceMutations: 
             - index: 5
               position: [ -1905.567, 1167.903, 65.218, 0.0 ]
               orientation: [ 0.002, 0.002, 0.750, 0.661 ]
         - index: 1915
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 124
           instanceMutations: 
             - index: 122
@@ -1090,7 +1091,7 @@ streaming:
               position: [ -1666.691, 1153.805, 62.219, 0.0 ]
               orientation: [ 0.003, 0.003, 0.663, 0.749 ]
         - index: 1924
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 33
@@ -1100,7 +1101,7 @@ streaming:
               position: [ -1813.058, 1168.276, 47.374, 0.0 ]
               orientation: [ 0.00, 0.00, 0.669, 0.743 ]
         - index: 1927
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 126
@@ -1110,24 +1111,24 @@ streaming:
               position: [ -1785.835, 1168.058, 62.286, 0.0 ]
               orientation: [ -0.006, -0.005, 0.668, 0.744 ]
         - index: 1937
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 15
           instanceMutations: 
             - index: 14
               position: [ -1607.354, 1145.513, 59.918, 0.0 ]
               orientation: [ 0.042, 0.035, 0.640, 0.766 ]
         - index: 1938
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 40
           instanceMutations: 
             - index: 36
               position: [ -1548.471, 1139.258, 51.140, 0.0 ]
               orientation: [ 0.063, 0.065, 0.717, 0.691 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-7_4_0_2.streamingsector
-      expectedNodes: 2991
+      expectedNodes: 2992
       nodeMutations:
-        - index: 2877
-          type: worldCollisionNode
+        - index: 2878
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 9
@@ -1136,8 +1137,8 @@ streaming:
             - index: 85
               position: [ -1724.450, 1153.840, 48.210, 0.0 ]
               orientation: [ 0.0, 0.0, 0.669, 0.743 ]
-        - index: 2898
-          type: worldCollisionNode
+        - index: 2899
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 68
@@ -1145,20 +1146,20 @@ streaming:
               orientation: [ 0.0, 0.0, 0.669, 0.743 ]
     ## 7 - 12
     - path: base\worlds\03_night_city\_compiled\default\exterior_-5_0_0_3.streamingsector
-      expectedNodes: 1339
+      expectedNodes: 1341
       nodeMutations:
         - index: 1296
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 8
               position: [ -2062.081, 425.245, 56.108, 0.0 ]
               orientation: [ 0.0, 0.0, -0.999, 0.034 ]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-4_-2_0_3.streamingsector
-      expectedNodes: 1530
+      expectedNodes: 1531
       nodeMutations:
         - index: 1517
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 87
           instanceMutations: 
             - index: 85
@@ -1172,7 +1173,7 @@ streaming:
       expectedNodes: 1478
       nodeMutations:
         - index: 1432
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 104
@@ -1182,7 +1183,7 @@ streaming:
       expectedNodes: 2246
       nodeMutations:
         - index: 465
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 1
           instanceMutations: 
             - index: 0
@@ -1192,7 +1193,7 @@ streaming:
       expectedNodes: 1058
       nodeMutations:
         - index: 986
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 90
@@ -1202,7 +1203,7 @@ streaming:
       expectedNodes: 416
       nodeMutations:
         - index: 133
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 7
           instanceMutations: 
             - index: 6
@@ -1217,7 +1218,7 @@ streaming:
       expectedNodes: 554
       nodeMutations:
         - index: 548
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 76
@@ -1227,7 +1228,7 @@ streaming:
       expectedNodes: 416
       nodeMutations:
         - index: 405
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 80
@@ -1237,35 +1238,35 @@ streaming:
       expectedNodes: 105
       nodeDeletions:
         - index: 104
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 32
           instanceDeletions: [30, 31]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_-3_0_2.streamingsector
-      expectedNodes: 1014
+      expectedNodes: 1029
       nodeDeletions:
-        - index: 983
-          type: worldCollisionNode
+        - index: 997
+          type: worldCookedCollisionNode
           expectedInstances: 22
           instanceDeletions: [21]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-6_-5_0_1.streamingsector
       expectedNodes: 416
       nodeDeletions:
         - index: 413
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 11
           instanceDeletions: [10]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-7_-5_0_1.streamingsector
       expectedNodes: 1484
       nodeDeletions:
         - index: 1468
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 52
           instanceDeletions: [47, 48, 49, 50, 51]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-7_-4_0_1.streamingsector
       expectedNodes: 1380
       nodeMutations:
         - index: 1254
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 60
@@ -1274,35 +1275,35 @@ streaming:
     - path: base\worlds\03_night_city\_compiled\default\exterior_-4_-2_0_2.streamingsector
       expectedNodes: 4268
       nodeMutations:
-        - index: 4193
-          type: worldCollisionNode
+        - index: 4191
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 96
               position: [ -911.502, -484.060, 5.323, 0.0 ]
               orientation: [ 0.0, -0.0, -0.456, -0.89 ]
       nodeDeletions:
-        - index: 4093
-          type: worldCollisionNode
+        - index: 4090
+          type: worldCookedCollisionNode
           expectedInstances: 17
           instanceDeletions: [13, 14, 15, 16]
-        - index: 4156
-          type: worldCollisionNode
+        - index: 4155
+          type: worldCookedCollisionNode
           expectedInstances: 64
           instanceDeletions: [61, 62, 63]
-        - index: 4160
-          type: worldCollisionNode
+        - index: 4159
+          type: worldCookedCollisionNode
           expectedInstances: 12
           instanceDeletions: [9, 10, 11]
-        - index: 4179
-          type: worldCollisionNode
+        - index: 4178
+          type: worldCookedCollisionNode
           expectedInstances: 35
           instanceDeletions: [33, 34]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-8_-4_0_1.streamingsector
       expectedNodes: 1235
       nodeMutations:
         - index: 1218
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 120
@@ -1313,18 +1314,18 @@ streaming:
               orientation: [ 0.0, -0.0, 0.456, 0.890 ]
       nodeDeletions:
         - index: 1187
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 3
           instanceDeletions: [0, 1, 2]
         - index: 1230
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 47
           instanceDeletions: [46]
     - path: base\worlds\03_night_city\_compiled\default\exterior_-9_-3_0_1.streamingsector
       expectedNodes: 1638
       nodeDeletions:
         - index: 1608
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 6
           instanceDeletions: [5]
     ### D Line
@@ -1344,10 +1345,10 @@ streaming:
     ## Nothing to change
     ## 6 - 9
     - path: base\worlds\03_night_city\_compiled\default\exterior_-3_2_0_3.streamingsector
-      expectedNodes: 2043
+      expectedNodes: 2042
       nodeMutations:
-        - index: 1926
-          type: worldCollisionNode
+        - index: 1925
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 108
@@ -1357,7 +1358,7 @@ streaming:
       expectedNodes: 3648
       nodeMutations:
         - index: 3470
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 115
@@ -1370,21 +1371,21 @@ streaming:
       expectedNodes: 1062
       nodeMutations:
         - index: 689
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 95
               position: [ -1422.684, 628.495, 26.173, 0.0 ]
               orientation: [ 0.0, 0.0, -0.009, 1.0 ]
         - index: 690
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations:
             - index: 123
               position: [ -1422.963, 562.149, 29.342, 0.0 ]
               orientation: [ 0.0, 0.0, -0.009, 1.0 ]
         - index: 693
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 110
           instanceMutations:
             - index: 67
@@ -1394,7 +1395,7 @@ streaming:
               position: [ -1422.005, 712.627, 30.515, 0.0 ]
               orientation: [ 0.0, 0.0, -0.009, 1.0 ]
         - index: 699
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 10
           instanceMutations:
             - index: 4
@@ -1407,7 +1408,7 @@ streaming:
       expectedNodes: 2276
       nodeMutations:
         - index: 2173
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 111
           instanceMutations:
             - index: 16
@@ -1422,21 +1423,21 @@ streaming:
       expectedNodes: 2257
       nodeMutations:
         - index: 2206
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 35
               position: [ -1698.289, 1879.354, 15.432, 0.0 ]
               orientation: [ 0.000, 0.000, 0.862, 0.508 ]
         - index: 2212
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 71
               position: [ -1747.857, 1868.105, 22.353, 0.0 ]
               orientation: [ 0.000, 0.000, 0.866, 0.5 ]
         - index: 2234
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 27
           instanceMutations:
             - index: 20
@@ -1468,7 +1469,7 @@ streaming:
       expectedNodes: 2627
       nodeMutations:
         - index: 2555
-          type: worldCollisionNode
+          type: worldCookedCollisionNode
           expectedInstances: 128
           instanceMutations: 
             - index: 35

@@ -421,6 +421,11 @@ end
 
 function Event:CheckEnableSit()
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
+    if self:IsAtStation() then
+        self.log_obj:Record(LogLevel.Debug, "Metro is at station. Sit command is blocked")
+        self:SetStatus(Def.State.WalkInsideMetro)
+        return
+    end
     if self.metro_obj:IsInSeatArea(player_local_pos) and self.metro_obj:GetSpeed() >= 1 then
         self.log_obj:Record(LogLevel.Debug, "Player is in Seat Area")
         self:SetStatus(Def.State.EnableSit)
@@ -428,6 +433,13 @@ function Event:CheckEnableSit()
         self.log_obj:Record(LogLevel.Debug, "Player is not in Seat Area")
         self:SetStatus(Def.State.WalkInsideMetro)
     end
+end
+
+function Event:IsAtStation()
+    local quest_system = Game.GetQuestsSystem()
+    local active_station_num = quest_system:GetFact("ue_metro_active_station")
+    local next_station_num = quest_system:GetFact("ue_metro_next_station")
+    return active_station_num == next_station_num
 end
 
 function Event:CheckInvalidPosition()
