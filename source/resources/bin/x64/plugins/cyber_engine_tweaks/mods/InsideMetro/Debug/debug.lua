@@ -10,6 +10,7 @@ function Debug:New(core_obj)
     obj.is_im_gui_player_local = false
     obj.is_im_gui_seat_position = false
     obj.is_im_gui_metro_speed = false
+    obj.is_im_gui_lead_time = false
     obj.is_set_observer = false
     obj.is_im_gui_line_info = false
     obj.is_im_gui_measurement = false
@@ -29,6 +30,7 @@ function Debug:ImGuiMain()
     self:ImGuiPlayerLocalPosition()
     self:ImGuiSeatPosition()
     self:ImGuiMetroSpeed()
+    self:ImGuiWorkspotLeadTime()
     self:ImGuiRistrictedArea()
     self:ImGuiLineInfo()
     self:ImGuiMeasurement()
@@ -109,7 +111,7 @@ function Debug:ImGuiPlayerLocalPosition()
             return
         end
         local player_pos = player:GetWorldPosition()
-        if self.core_obj.metro_obj.entity == nil or  self.core_obj.metro_obj.measurement_npc_position == nil then
+        if self.core_obj.metro_obj.entity == nil then
             return
         end
         local player_local_pos = self.core_obj.metro_obj:ChangeWorldPosToLocal(player_pos)
@@ -124,11 +126,6 @@ function Debug:ImGuiPlayerLocalPosition()
         local absolute_position_y = string.format("%.2f", player_local_pos.y)
         local absolute_position_z = string.format("%.2f", player_local_pos.z)
         ImGui.Text("Player Local Pos : " .. absolute_position_x .. ", " .. absolute_position_y .. ", " .. absolute_position_z)
-        local npc_pos = self.core_obj.metro_obj.measurement_npc_position
-        local npc_position_x = string.format("%.2f", npc_pos.x)
-        local npc_position_y = string.format("%.2f", npc_pos.y)
-        local npc_position_z = string.format("%.2f", npc_pos.z)
-        ImGui.Text("NPC Measurement Pos : " .. npc_position_x .. ", " .. npc_position_y .. ", " .. npc_position_z)
         local pos = self.core_obj.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
         if pos == nil then
             return
@@ -178,6 +175,25 @@ function Debug:ImGuiMetroSpeed()
         else
             ImGui.Text("On Ground : False")
         end
+    end
+end
+
+function Debug:ImGuiWorkspotLeadTime()
+    self.is_im_gui_lead_time = ImGui.Checkbox("[ImGui] Workspot Lead Time", self.is_im_gui_lead_time)
+    if self.is_im_gui_lead_time then
+        local metro_obj = self.core_obj.metro_obj
+        local ret1, ret2 = ImGui.SliderFloat("Workspot lead time (s)", metro_obj.workspot_lead_time, 0.0, 0.3)
+        local value
+        if type(ret1) == "number" then
+            value = ret1
+        else
+            value = ret2
+        end
+        if type(value) == "number" then
+            metro_obj.workspot_lead_time = value
+        end
+        local lead = metro_obj.workspot_lead_time * metro_obj:GetSpeed()
+        ImGui.Text(string.format("Lead distance : %.2fm (speed %.1fm/s)", lead, metro_obj:GetSpeed()))
     end
 end
 

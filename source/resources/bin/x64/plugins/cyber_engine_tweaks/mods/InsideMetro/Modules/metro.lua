@@ -10,16 +10,35 @@ function Metro:New()
     obj.domain = {x_max = 10.0, x_min = -10.0, y_max = 17.0, y_min = -17.0, z_max = 8.6, z_min = -8.2}
     obj.default_position = Vector4.new(0, 0, 0.8, 1)
     obj.seat_area_radius = 1.0
+    obj.speed_check_interval = 0.01
+    obj.speed_smoothing = 0.3
+    -- Seat position offset applied when sitting down (metro local space).
+    -- x: positive means "away from the center aisle" (flipped automatically on left seats)
+    obj.sit_position_offset = {x = 0.1, y = 0.0, z = 0.2}
+    -- Sign of the slope tilt applied to the seat orientation.
+    -- Flip to -1 if the seat tilts the wrong way on uphill/downhill.
+    obj.seat_slope_sign = 1
+    -- Lead time (seconds) used to extrapolate the workspot position forward.
+    -- The workspot system places the actor with a systematic delay (teleport
+    -- pipeline + entity transform lag), so on a moving train the workspot ends
+    -- up behind the seat. Increase if the player is left behind, decrease
+    -- (or set 0) if the player ends up ahead of the seat.
+    obj.workspot_lead_time = 0.03
+    obj.lag_check_interval = 0.1
+    obj.lag_stutter_ratio_low = 0.3
+    obj.lag_stutter_ratio_high = 1.7
+    obj.lag_recent_ticks = 0
     -- dynamic --
     obj.entity = nil
     obj.entity_id = nil
     obj.is_mounted_player = true
     obj.player_seat_position = nil
     obj.is_player_seat_right_side = true
-    obj.measurement_npc_position = nil
-    obj.world_npc_position = nil
+    obj.last_metro_position = nil
     obj.current_speed = 0
-    obj.measurement_npc_diff_yaw = 0
+    obj.is_lag_monitor = false
+    obj.lag_stall_ticks = 0
+    obj.prev_metro_pos = nil
     obj.next_station_num = 1
     obj.selected_track_index = 1
     obj.is_speed_observer = false
@@ -28,8 +47,8 @@ end
 
 function Metro:Initialize()
     self:SetEntity()
-    self:SetNPCForMeasurement()
     self:SetSpeedObserver()
+    self:SetTransformLagMonitor()
 end
 
 function Metro:Uninitialize()
@@ -38,10 +57,8 @@ function Metro:Uninitialize()
     self.is_mounted_player = true
     self.player_seat_position = nil
     self.is_player_seat_right_side = true
-    self.measurement_npc_position = nil
-    self.world_npc_position = nil
+    self.last_metro_position = nil
     self.current_speed = 0
-    self.measurement_npc_diff_yaw = 0
     self.next_station_num = 1
     self.selected_track_index = 1
 end
@@ -49,12 +66,18 @@ end
 function Metro:SetEntity()
     local entity = GetMountedVehicle(Game.GetPlayer())
     if entity == nil then
+        if self.entity ~= nil then
+            self.log_obj:Record(LogLevel.Info, "SetEntity: mounted vehicle is nil, entity cleared")
+        end
         self.entity = nil
         self.entity_id = nil
         return false
     elseif self.entity == entity and self.entity_id == entity:GetEntityID() then
         return true
     elseif entity:GetClassName().value == "ncartMetroObject" then
+        if self.entity ~= entity then
+            self.log_obj:Record(LogLevel.Info, string.format("SetEntity: entity refreshed to id %s", tostring(entity:GetEntityID())))
+        end
         self.entity = entity
         self.entity_id = self.entity:GetEntityID()
         return true
@@ -76,28 +99,62 @@ function Metro:IsMountedPlayer()
     end
 end
 
+-- Safely calls an entity method. If the entity handle is stale (entity was
+-- destroyed / unloaded but the Lua reference is not nil), CET raises an error
+-- like "context must be 'entEntity'". In that case the entity reference is
+-- cleared so all observers stop cleanly, and nil is returned.
+function Metro:SafeEntityCall(method_name)
+    if self.entity == nil then
+        return nil
+    end
+    local ok, result = pcall(function(entity)
+        return entity[method_name](entity)
+    end, self.entity)
+    if not ok or result == nil then
+        self.entity = nil
+        self.entity_id = nil
+        return nil
+    end
+    return result
+end
+
 function Metro:GetWorldPosition()
-    local vec4 = self.entity:GetWorldPosition()
+    local vec4 = self:SafeEntityCall("GetWorldPosition")
+    if vec4 == nil then
+        return nil
+    end
     return Vector4.new(vec4.x, vec4.y, vec4.z, vec4.w)
 end
 
 function Metro:GetWorldOrientation()
-    local quat = self.entity:GetWorldOrientation()
+    local quat = self:SafeEntityCall("GetWorldOrientation")
+    if quat == nil then
+        return nil
+    end
     return Quaternion.new(quat.i, quat.j, quat.k, quat.r)
 end
 
 function Metro:GetWorldRight()
-    local vec4 = self.entity:GetWorldRight()
+    local vec4 = self:SafeEntityCall("GetWorldRight")
+    if vec4 == nil then
+        return nil
+    end
     return Vector4.new(vec4.x, vec4.y, vec4.z, vec4.w)
 end
 
 function Metro:GetWorldForward()
-    local vec4 = self.entity:GetWorldForward()
+    local vec4 = self:SafeEntityCall("GetWorldForward")
+    if vec4 == nil then
+        return nil
+    end
     return Vector4.new(vec4.x, vec4.y, vec4.z, vec4.w)
 end
 
 function Metro:GetWorldUp()
-    local vec4 = self.entity:GetWorldUp()
+    local vec4 = self:SafeEntityCall("GetWorldUp")
+    if vec4 == nil then
+        return nil
+    end
     return Vector4.new(vec4.x, vec4.y, vec4.z, vec4.w)
 end
 
@@ -111,6 +168,9 @@ function Metro:ChangeWorldPosToLocal(world_pos)
     local right = self:GetWorldRight()
     local forward = self:GetWorldForward()
     local up = self:GetWorldUp()
+    if origin == nil or right == nil or forward == nil or up == nil then
+        return nil
+    end
     local relative = Vector4.new(world_pos.x - origin.x, world_pos.y - origin.y, world_pos.z - origin.z, 1)
     local x = Vector4.Dot(relative, right)
     local y = Vector4.Dot(relative, forward)
@@ -129,6 +189,9 @@ function Metro:ChangeLocalPosToWorld(local_pos)
     local right = self:GetWorldRight()
     local forward = self:GetWorldForward()
     local up = self:GetWorldUp()
+    if origin == nil or right == nil or forward == nil or up == nil then
+        return nil
+    end
     local x = Vector4.new(right.x * local_pos.x, right.y * local_pos.x, right.z * local_pos.x, 0)
     local y = Vector4.new(forward.x * local_pos.y, forward.y * local_pos.y, forward.z * local_pos.y, 0)
     local z = Vector4.new(up.x * local_pos.z, up.y * local_pos.z, up.z * local_pos.z, 0)
@@ -137,6 +200,9 @@ end
 
 function Metro:IsInMetro(local_pos)
 
+    if local_pos == nil then
+        return false
+    end
     if local_pos.x > self.domain.x_max or local_pos.x < self.domain.x_min then
         return false
     end
@@ -152,6 +218,9 @@ end
 
 function Metro:IsInSeatArea(local_pos)
 
+    if local_pos == nil or self.player_seat_position == nil then
+        return false
+    end
     local distance = Vector4.Distance(local_pos, self.player_seat_position)
     if distance < self.seat_area_radius then
         return true
@@ -159,38 +228,28 @@ function Metro:IsInSeatArea(local_pos)
     return false
 end
 
-function Metro:SetNPCForMeasurement()
-
-    local min_distance = 100
-    local min_index = 0
-    local player_pos = Game.GetPlayer():GetWorldPosition()
-    local npcs = Game.GetPlayer():GetNPCsAroundObject()
-    for index, npc in ipairs(npcs) do
-        local npc_pos = npc:GetWorldPosition()
-        local distnce = Vector4.Distance(player_pos, npc_pos)
-        if distnce < min_distance and self:IsInMetro(self:ChangeWorldPosToLocal(npc_pos)) then
-            min_distance = distnce
-            min_index = index
-        end
-    end
-    self.measurement_npc_position = self:ChangeWorldPosToLocal(npcs[min_index]:GetWorldPosition())
-    self.measurement_npc_entity = npcs[min_index]
-    self.measurement_npc_diff_yaw = Vector4.GetAngleBetween(self.measurement_npc_entity:GetWorldForward(), self:GetWorldForward())
-end
-
-function Metro:GetNPCWorldPosition()
-    local vec4 = self.measurement_npc_entity:GetWorldPosition()
-    return Vector4.new(vec4.x, vec4.y, vec4.z, vec4.w)
-end
-
+-- Seat position with the sitting offset applied (used only when sitting down).
 function Metro:GetPlayerSeatPosition()
+    local sign = 1
+    if not self.is_player_seat_right_side then
+        sign = -1
+    end
+    return Vector4.new(
+        self.player_seat_position.x + self.sit_position_offset.x * sign,
+        self.player_seat_position.y + self.sit_position_offset.y,
+        self.player_seat_position.z + self.sit_position_offset.z,
+        1)
+end
+
+-- Raw recorded seat position without any offset (used when standing up).
+function Metro:GetPlayerSeatPositionRaw()
     return Vector4.new(self.player_seat_position.x, self.player_seat_position.y, self.player_seat_position.z, 1)
 end
 
 function Metro:SetPlayerSeatPosition()
 
     self.log_obj:Record(LogLevel.Trace, "SetPlayerSeatPosition")
-    self.player_seat_position = self:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
+    self.player_seat_position = self:ChangeWorldPosToLocal(Game.GetPlayer():GetWorldPosition())
     if self.player_seat_position.x > 0 then
         self.is_player_seat_right_side = true
     else
@@ -203,35 +262,59 @@ function Metro:IsPlayerSeatRightSide()
     return self.is_player_seat_right_side
 end
 
+-- Seat orientation from the current metro transform (position-independent).
+-- The base yaw faces along the metro right vector (seats face sideways),
+-- flipped 180 degrees on left seats. The metro pitch (uphill/downhill slopes)
+-- is a rotation around the metro right axis, which is the seat facing axis,
+-- so it shows up in the euler roll slot (sign flips per side).
+-- The metro never rolls around its own forward axis, so pitch slot stays 0.
+function Metro:GetSeatAngle()
+    local right_dir = self:GetWorldRight()
+    local forward_dir = self:GetWorldForward()
+    if right_dir == nil or forward_dir == nil then
+        return nil
+    end
+    local angle = Vector4.ToRotation(right_dir)
+    local forward_angle = Vector4.ToRotation(forward_dir)
+    if self:IsPlayerSeatRightSide() then
+        angle.roll = self.seat_slope_sign * forward_angle.pitch
+    else
+        angle.yaw = angle.yaw + 180
+        angle.roll = -self.seat_slope_sign * forward_angle.pitch
+    end
+    return angle
+end
+
+-- NOTE: NPC anchor based correction was removed.
+-- The metro entity transform itself is now the single source of truth.
 function Metro:GetAccurateLocalPosition(world_pos)
-
-    if self.measurement_npc_entity == nil then
-        return nil
-    end
-    local world_npc_pos = self:GetNPCWorldPosition()
-    local world_metro_pos = self:GetWorldPosition()
-    local vector_from_p_to_n = Vector4.new(world_pos.x - world_npc_pos.x, world_pos.y - world_npc_pos.y, world_pos.z - world_npc_pos.z, 1)
-    local world_direction = Vector4.new(world_metro_pos.x + vector_from_p_to_n.x, world_metro_pos.y + vector_from_p_to_n.y, world_metro_pos.z + vector_from_p_to_n.z, 1)
-    local vector_form_p_to_n_local = self:ChangeWorldPosToLocal(world_direction)
-    if vector_form_p_to_n_local == nil then
-        return nil
-    end
-    return Vector4.new(self.measurement_npc_position.x + vector_form_p_to_n_local.x, self.measurement_npc_position.y + vector_form_p_to_n_local.y, self.measurement_npc_position.z + vector_form_p_to_n_local.z, 1)
-
+    return self:ChangeWorldPosToLocal(world_pos)
 end
 
 function Metro:GetAccurateWorldPosition(local_pos)
+    return self:ChangeLocalPosToWorld(local_pos)
+end
 
-    if self.measurement_npc_entity == nil then
+-- Compensates the systematic placement delay by extrapolating the position
+-- forward along the metro direction by speed * workspot_lead_time.
+function Metro:ExtrapolateWorldPosition(world_pos)
+
+    if world_pos == nil then
         return nil
     end
-    local world_npc_pos = self:ChangeLocalPosToWorld(self.measurement_npc_position)
-    local world_pos = self:ChangeLocalPosToWorld(local_pos)
-    local vector_from_p_to_n = Vector4.new(world_pos.x - world_npc_pos.x, world_pos.y - world_npc_pos.y, world_pos.z - world_npc_pos.z, 1)
-    local actual_npc_pos = self:GetNPCWorldPosition()
-
-    return Vector4.new(actual_npc_pos.x + vector_from_p_to_n.x, actual_npc_pos.y + vector_from_p_to_n.y, actual_npc_pos.z + vector_from_p_to_n.z, 1)
-
+    if self.workspot_lead_time == nil or self.workspot_lead_time <= 0 then
+        return world_pos
+    end
+    local speed = self:GetSpeed()
+    if speed <= 0.1 then
+        return world_pos
+    end
+    local forward = self:GetWorldForward()
+    if forward == nil then
+        return world_pos
+    end
+    local lead = speed * self.workspot_lead_time
+    return Vector4.new(world_pos.x + forward.x * lead, world_pos.y + forward.y * lead, world_pos.z + forward.z * lead, 1)
 end
 
 function Metro:SetSpeedObserver()
@@ -241,29 +324,31 @@ function Metro:SetSpeedObserver()
         return
     end
     self.is_speed_observer = true
-    Cron.Every(0.01, {tick = 1}, function(timer)
-        timer.tick = timer.tick + 1
+    self.last_metro_position = nil
+    Cron.Every(self.speed_check_interval, {tick = 1}, function(timer)
         if self.entity == nil then
+            self.current_speed = 0
+            self.last_metro_position = nil
+            self.is_speed_observer = false
+            Cron.Halt(timer)
             return
         end
-        Cron.Every(0.01, {tick = 1}, function(timer_)
-            timer_.tick = timer_.tick + 1
-            if self.entity == nil then
-                Cron.Halt(timer_)
-                self.is_speed_observer = false
-                return
-            elseif self.measurement_npc_entity == nil then
-                return
-            elseif self.world_npc_position == nil then
-                self.world_npc_position = self:GetNPCWorldPosition()
-                return
+        local current_pos = self:GetWorldPosition()
+        if current_pos == nil then
+            return
+        end
+        if self.last_metro_position ~= nil then
+            local distance = Vector4.Distance(current_pos, self.last_metro_position)
+            -- Cron.Every fires at most once per frame, so the real elapsed time
+            -- is the frame delta, not the configured interval.
+            local dt = InsideMetro.last_delta or self.speed_check_interval
+            if dt <= 0 then
+                dt = self.speed_check_interval
             end
-            local current_pos = self:GetNPCWorldPosition()
-            local distance = Vector4.Distance(current_pos, self.world_npc_position)
-            self.current_speed = distance / 0.01
-            self.world_npc_position = current_pos
-        end)
-        Cron.Halt(timer)
+            local raw_speed = distance / dt
+            self.current_speed = self.current_speed * (1 - self.speed_smoothing) + raw_speed * self.speed_smoothing
+        end
+        self.last_metro_position = current_pos
     end)
 
 end
@@ -272,10 +357,77 @@ function Metro:GetSpeed()
     return self.current_speed
 end
 
+-- True while the lag monitor recently detected the metro entity transform
+-- stalling / lagging behind the actual train (typically right after departure).
+function Metro:IsTransformLagging()
+    return self.lag_recent_ticks > 0
+end
+
+-- Monitor whether the metro entity transform lags behind the actual train
+-- movement. Detector: entity position stalls for several ticks then jumps
+-- forward (typical right after departure).
+function Metro:SetTransformLagMonitor()
+
+    if self.is_lag_monitor then
+        self.log_obj:Record(LogLevel.Warning, "TransformLagMonitor is already running")
+        return
+    end
+    self.is_lag_monitor = true
+    self.lag_stall_ticks = 0
+    self.prev_metro_pos = nil
+    Cron.Every(self.lag_check_interval, {tick = 1}, function(timer)
+        if self.entity == nil then
+            self.is_lag_monitor = false
+            self.prev_metro_pos = nil
+            self.lag_recent_ticks = 0
+            Cron.Halt(timer)
+            return
+        end
+        if self.lag_recent_ticks > 0 then
+            self.lag_recent_ticks = self.lag_recent_ticks - 1
+        end
+        local metro_pos = self:GetWorldPosition()
+        if metro_pos == nil then
+            return
+        end
+
+        if self.prev_metro_pos ~= nil and self.current_speed > 1 then
+            local metro_delta = Vector4.Distance(metro_pos, self.prev_metro_pos)
+            local expected = self.current_speed * self.lag_check_interval
+
+            -- stutter detection: stall then jump
+            if metro_delta < expected * self.lag_stutter_ratio_low then
+                self.lag_stall_ticks = self.lag_stall_ticks + 1
+            elseif self.lag_stall_ticks > 0 then
+                if metro_delta > expected * self.lag_stutter_ratio_high then
+                    self.log_obj:Record(LogLevel.Warning, string.format(
+                        "TransformLag(stutter): metro transform stalled %d ticks then jumped %.3fm (expected %.3fm / %.2fs)",
+                        self.lag_stall_ticks, metro_delta, expected, self.lag_check_interval))
+                    self.lag_recent_ticks = 10
+                end
+                self.lag_stall_ticks = 0
+            end
+        end
+
+        self.prev_metro_pos = metro_pos
+    end)
+end
+
 function Metro:Unmount()
 
     local player = Game.GetPlayer()
-    self.entity = GetMountedVehicle(player)
+    -- The player may already be unmounted (e.g. a station/reset fired while the
+    -- stand-up sequence was running). Unmounting a non-mounted player would
+    -- index a nil entity and crash, so bail out cleanly instead. Do NOT
+    -- overwrite self.entity with nil here: downstream metro-domain checks
+    -- (walk reset) rely on the last valid entity handle.
+    local mounted = GetMountedVehicle(player)
+    if mounted == nil then
+        self.log_obj:Record(LogLevel.Warning, "Unmount: player not mounted, nothing to unmount")
+        self.is_mounted_player = false
+        return
+    end
+    self.entity = mounted
     self.entity_id = self.entity:GetEntityID()
     local seat = "Passengers"
 

@@ -21,7 +21,6 @@ function Event:New(player_obj, metro_obj)
     obj.is_ready = false
     obj.is_invisible_collision = false
     obj.is_first_standing = false
-    obj.standing_y_offset = 0
     obj.is_in_menu = false
     obj.is_in_popup = false
     obj.is_in_photo = false
@@ -55,7 +54,6 @@ function Event:Uninitialize()
     self.is_ready = false
     self.is_invisible_collision = false
     self.is_first_standing = false
-    self.standing_y_offset = 0
     -- Clear velocity history
     self.velocity_history = {}
     self.current_velocity = Vector4.new(0, 0, 0, 0)
@@ -255,7 +253,31 @@ function Event:CheckAllEvents()
 
     if self.current_status == Def.State.OutsideMetro then
         self:CheckInsideMetro()
-    elseif self.current_status == Def.State.SitInsideMetro then
+        return
+    end
+
+    -- General safety net for seated states: whenever the player is no longer
+    -- mounted while seated (for example exiting through the stand menu at a
+    -- station while the state is still EnableStand), the mod state must be
+    -- reset. Otherwise is_initial/is_ready stay set and standing up never
+    -- becomes available again after re-boarding. Note EnableSit and
+    -- WalkInsideMetro are excluded on purpose: the player is intentionally
+    -- unmounted while walking inside (EnableSit = sit menu shown while walking).
+    if (self.current_status == Def.State.SitInsideMetro
+            or self.current_status == Def.State.EnableStand)
+            and not self.metro_obj:IsMountedPlayer()
+            and not InsideMetro.core_obj.is_switching_pose then
+        self.log_obj:Record(LogLevel.Info, "Detect Outside Metro (general reset)")
+        local changed = self:SetStatus(Def.State.OutsideMetro)
+        if not changed then
+            self.current_status = Def.State.OutsideMetro
+            self:Uninitialize()
+        end
+        self.metro_obj:Uninitialize()
+        return
+    end
+
+    if self.current_status == Def.State.SitInsideMetro then
         self:CheckEnableStand()
         self:CheckOutsideMetro()
         self:CheckNextStation()
@@ -272,6 +294,17 @@ function Event:CheckAllEvents()
         self:CheckInvalidPosition()
         self:CheckRestrictedArea()
         self:CheckNextStation()
+        -- Walking players are intentionally unmounted, so reset only once the
+        -- player is actually outside the metro domain (got off and the train
+        -- left) or the metro entity is gone.
+        if not InsideMetro.core_obj.is_switching_pose then
+            local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
+            if player_local_pos == nil or not self.metro_obj:IsInMetro(player_local_pos) then
+                self.log_obj:Record(LogLevel.Info, "Detect Outside Metro (walk reset)")
+                self:SetStatus(Def.State.OutsideMetro)
+                self.metro_obj:Uninitialize()
+            end
+        end
     elseif self.current_status == Def.State.Invalid then
         self:CheckGetOff()
     end
@@ -351,11 +384,10 @@ function Event:CheckEnableStand()
         end
     end
 
+    -- Keep the stand menu visible during the first-standing window: without
+    -- this early return the speed >= 1 branch below would immediately hide it.
     if self.is_first_standing then
-        self.standing_y_offset = 1.5 * self.metro_obj:GetSpeed() / 43
         return
-    else
-        self.standing_y_offset = 0
     end
 
     local is_invalid = false
@@ -421,6 +453,10 @@ end
 
 function Event:CheckEnableSit()
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
+    if player_local_pos == nil then
+        self:SetStatus(Def.State.WalkInsideMetro)
+        return
+    end
     if self:IsAtStation() then
         self.log_obj:Record(LogLevel.Debug, "Metro is at station. Sit command is blocked")
         self:SetStatus(Def.State.WalkInsideMetro)
@@ -444,6 +480,9 @@ end
 
 function Event:CheckInvalidPosition()
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
+    if player_local_pos == nil then
+        return
+    end
     if not self.metro_obj:IsInMetro(player_local_pos) then
         self.log_obj:Record(LogLevel.Warning, "Player is not in Metro")
         self.metro_obj:TeleportToSafePosition()
