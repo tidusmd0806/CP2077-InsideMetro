@@ -14,6 +14,8 @@ function Debug:New(core_obj)
     obj.is_im_gui_line_info = false
     obj.is_im_gui_measurement = false
     obj.is_im_gui_ristrict = false
+    obj.is_im_gui_spawn = false
+    obj.spawned_metro_id = nil
     return setmetatable(obj, self)
 end
 
@@ -32,6 +34,7 @@ function Debug:ImGuiMain()
     self:ImGuiRistrictedArea()
     self:ImGuiLineInfo()
     self:ImGuiMeasurement()
+    self:ImGuiSpawnMetro()
 
     ImGui.End()
 
@@ -255,6 +258,37 @@ function Debug:ImGuiMeasurement()
         local absolute_position_y = string.format("%.2f", y)
         local absolute_position_z = string.format("%.2f", z)
         ImGui.Text("[LookAt]X:" .. absolute_position_x .. ", Y:" .. absolute_position_y .. ", Z:" .. absolute_position_z)
+    end
+end
+
+-- TEMP: spawn the metro train ent via codeware dynamic entity system
+function Debug:ImGuiSpawnMetro()
+    self.is_im_gui_spawn = ImGui.Checkbox("[ImGui] Spawn Metro (temp)", self.is_im_gui_spawn)
+    if self.is_im_gui_spawn then
+        if ImGui.Button("Spawn ue_metro_train") then
+            local player = Game.GetPlayer()
+            local pos = player:GetWorldPosition()
+            local forward = player:GetWorldForward()
+            local spawn_pos = Vector4.new(pos.x + forward.x * 10, pos.y + forward.y * 10, pos.z + 1, 1)
+            local angle = Quaternion.new(player:GetWorldOrientation())
+            local spec = DynamicEntitySpec.new()
+            spec.recordID = "Vehicle.ue_metro_train"
+            spec.position = spawn_pos
+            spec.orientation = angle
+            spec.alwaysSpawned = true
+            spec.persistSpawn = false
+            spec.persistState = false
+            local id = Game.GetDynamicEntitySystem():CreateEntity(spec)
+            self.spawned_metro_id = id
+            print("[InsideMetro][Debug] spawned metro id=" .. tostring(id and id.hash))
+        end
+        if self.spawned_metro_id ~= nil then
+            if ImGui.Button("Despawn metro") then
+                Game.GetDynamicEntitySystem():DeleteEntity(self.spawned_metro_id)
+                print("[InsideMetro][Debug] despawned metro id=" .. tostring(self.spawned_metro_id.hash))
+                self.spawned_metro_id = nil
+            end
+        end
     end
 end
 
