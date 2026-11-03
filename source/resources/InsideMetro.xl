@@ -1063,9 +1063,9 @@ streaming:
             - index: 75
               position: [ -1337.898, 1376.650, 35.784, 0.0 ]
               orientation: [ 0.0, 0.0, -0.737, 0.676 ]
-            - index: 126
-              position: [ -1392.513, 1377.248, 0.0, 0.0 ]
-              orientation: [ 0.0, 0.0, -0.044, 0.999 ]
+            # - index: 126
+            #   position: [ -1392.513, 1377.248, 0.0, 0.0 ]
+            #   orientation: [ 0.0, 0.0, -0.737, 0.676 ]
         - index: 2016
           type: worldCookedCollisionNode
           expectedInstances: 128

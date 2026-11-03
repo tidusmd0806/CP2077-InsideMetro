@@ -10,7 +10,6 @@ function Debug:New(core_obj)
     obj.is_im_gui_player_local = false
     obj.is_im_gui_seat_position = false
     obj.is_im_gui_metro_speed = false
-    obj.is_im_gui_lead_time = false
     obj.is_set_observer = false
     obj.is_im_gui_line_info = false
     obj.is_im_gui_measurement = false
@@ -30,11 +29,9 @@ function Debug:ImGuiMain()
     self:ImGuiPlayerLocalPosition()
     self:ImGuiSeatPosition()
     self:ImGuiMetroSpeed()
-    self:ImGuiWorkspotLeadTime()
     self:ImGuiRistrictedArea()
     self:ImGuiLineInfo()
     self:ImGuiMeasurement()
-    self:ImGuiExcuteFunction()
 
     ImGui.End()
 
@@ -99,6 +96,14 @@ function Debug:ImGuiCheckStatus()
             ImGui.Text("In Workspot : True")
         else
             ImGui.Text("In Workspot : False")
+        end
+        local qs = Game.GetQuestsSystem()
+        ImGui.Text(string.format("pose_change=%d stand_door=%d",
+            qs:GetFactStr("ue_metro_signal_pose_change"), qs:GetFactStr("ue_metro_player_stand_door")))
+        local ok, info = pcall(function() return Game.GetWorkspotSystem():GetExtendedInfo(Game.GetPlayer()) end)
+        if ok and info ~= nil then
+            ImGui.Text(string.format("ws: active=%s entering=%s exiting=%s",
+                tostring(info.isActive), tostring(info.entering), tostring(info.exiting)))
         end
     end
 end
@@ -178,25 +183,6 @@ function Debug:ImGuiMetroSpeed()
     end
 end
 
-function Debug:ImGuiWorkspotLeadTime()
-    self.is_im_gui_lead_time = ImGui.Checkbox("[ImGui] Workspot Lead Time", self.is_im_gui_lead_time)
-    if self.is_im_gui_lead_time then
-        local metro_obj = self.core_obj.metro_obj
-        local ret1, ret2 = ImGui.SliderFloat("Workspot lead time (s)", metro_obj.workspot_lead_time, 0.0, 0.3)
-        local value
-        if type(ret1) == "number" then
-            value = ret1
-        else
-            value = ret2
-        end
-        if type(value) == "number" then
-            metro_obj.workspot_lead_time = value
-        end
-        local lead = metro_obj.workspot_lead_time * metro_obj:GetSpeed()
-        ImGui.Text(string.format("Lead distance : %.2fm (speed %.1fm/s)", lead, metro_obj:GetSpeed()))
-    end
-end
-
 function Debug:ImGuiRistrictedArea()
     self.is_im_gui_ristrict = ImGui.Checkbox("[ImGui] Station", self.is_im_gui_ristrict)
     if self.is_im_gui_ristrict then
@@ -270,60 +256,6 @@ function Debug:ImGuiMeasurement()
         local absolute_position_z = string.format("%.2f", z)
         ImGui.Text("[LookAt]X:" .. absolute_position_x .. ", Y:" .. absolute_position_y .. ", Z:" .. absolute_position_z)
     end
-end
-
-function Debug:ImGuiExcuteFunction()
-    if ImGui.Button("TF1") then
-        local sys = Game.GetPlayer():GetFastTravelSystem()
-        local arr = sys:GetFastTravelPoints()
-        print(#arr)
-        for _, point in ipairs(arr) do
-            local pointID = tostring(point.pointRecord.value)
-            if string.find(pointID, 'wat_lch_metro_ftp_02', 1, true) then
-                pointData = point
-                break
-            end
-        end
-        sys:PerformFastTravel(Game.GetPlayer(), pointData)
-        sys:SetFastTravelStarted()
-        print("Excute Test Function 1")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF2") then
-        local player = Game.GetPlayer()
-        local player_pos = player:GetWorldPosition()
-        local forward = player:GetWorldForward()
-        local new_pos = Vector4.new(player_pos.x + 3 * forward.x, player_pos.y + 3 * forward.y, player_pos.z + 3 * forward.z, player_pos.w)
-        local angle = player:GetWorldOrientation():ToEulerAngles()
-        Game.GetTeleportationFacility():Teleport(player, new_pos, angle)
-        print("Excute Test Function 2")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF3") then
-        local event = gameuiDeleteInputHintBySourceEvent.new()
-        event.source = CName.new("UI_DPad")
-        event.targetHintContainer = CName.new("GameplayInputHelper")
-        Game.GetUISystem():QueueEvent(event)
-        print("Excute Test Function 3")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF4") then
-        local system = Game.GetQuestsSystem()
-        system:SetFact(CName.new("ue_metro_next_station"), 1) 
-        print("Excute Test Function 4")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF5") then
-        print(Game.GetQuestsSystem():SetFact(CName.new("ue_metro_free_roam_get_up"), 1))
-        print("Excute Test Function 5")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF6") then
-        local current_pos = Game.GetPlayer():GetWorldPosition()
-        print(current_pos.x .. ", " .. current_pos.y .. ", " .. current_pos.z)
-        print("Excute Test Function 6")
-    end
-
 end
 
 return Debug

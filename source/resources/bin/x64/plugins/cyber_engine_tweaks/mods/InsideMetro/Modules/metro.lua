@@ -12,17 +12,7 @@ function Metro:New()
     obj.seat_area_radius = 1.0
     obj.speed_check_interval = 0.01
     obj.speed_smoothing = 0.3
-    -- Seat position offset applied when sitting down (metro local space).
-    -- x: positive means "away from the center aisle" (flipped automatically on left seats)
-    obj.sit_position_offset = {x = 0.1, y = 0.0, z = 0.2}
-    -- Sign of the slope tilt applied to the seat orientation.
-    -- Flip to -1 if the seat tilts the wrong way on uphill/downhill.
-    obj.seat_slope_sign = 1
-    -- Lead time (seconds) used to extrapolate the workspot position forward.
-    -- The workspot system places the actor with a systematic delay (teleport
-    -- pipeline + entity transform lag), so on a moving train the workspot ends
-    -- up behind the seat. Increase if the player is left behind, decrease
-    -- (or set 0) if the player ends up ahead of the seat.
+    -- Lead time (s) to extrapolate workspot position forward on a moving train.
     obj.workspot_lead_time = 0.03
     obj.lag_check_interval = 0.1
     obj.lag_stutter_ratio_low = 0.3
@@ -31,7 +21,6 @@ function Metro:New()
     -- dynamic --
     obj.entity = nil
     obj.entity_id = nil
-    obj.is_mounted_player = true
     obj.player_seat_position = nil
     obj.is_player_seat_right_side = true
     obj.last_metro_position = nil
@@ -54,7 +43,6 @@ end
 function Metro:Uninitialize()
     self.entity = nil
     self.entity_id = nil
-    self.is_mounted_player = true
     self.player_seat_position = nil
     self.is_player_seat_right_side = true
     self.last_metro_position = nil
@@ -99,10 +87,7 @@ function Metro:IsMountedPlayer()
     end
 end
 
--- Safely calls an entity method. If the entity handle is stale (entity was
--- destroyed / unloaded but the Lua reference is not nil), CET raises an error
--- like "context must be 'entEntity'". In that case the entity reference is
--- cleared so all observers stop cleanly, and nil is returned.
+-- Safely calls an entity method; stale handles return nil.
 function Metro:SafeEntityCall(method_name)
     if self.entity == nil then
         return nil
@@ -228,24 +213,6 @@ function Metro:IsInSeatArea(local_pos)
     return false
 end
 
--- Seat position with the sitting offset applied (used only when sitting down).
-function Metro:GetPlayerSeatPosition()
-    local sign = 1
-    if not self.is_player_seat_right_side then
-        sign = -1
-    end
-    return Vector4.new(
-        self.player_seat_position.x + self.sit_position_offset.x * sign,
-        self.player_seat_position.y + self.sit_position_offset.y,
-        self.player_seat_position.z + self.sit_position_offset.z,
-        1)
-end
-
--- Raw recorded seat position without any offset (used when standing up).
-function Metro:GetPlayerSeatPositionRaw()
-    return Vector4.new(self.player_seat_position.x, self.player_seat_position.y, self.player_seat_position.z, 1)
-end
-
 function Metro:SetPlayerSeatPosition()
 
     self.log_obj:Record(LogLevel.Trace, "SetPlayerSeatPosition")
@@ -262,31 +229,8 @@ function Metro:IsPlayerSeatRightSide()
     return self.is_player_seat_right_side
 end
 
--- Seat orientation from the current metro transform (position-independent).
--- The base yaw faces along the metro right vector (seats face sideways),
--- flipped 180 degrees on left seats. The metro pitch (uphill/downhill slopes)
--- is a rotation around the metro right axis, which is the seat facing axis,
--- so it shows up in the euler roll slot (sign flips per side).
--- The metro never rolls around its own forward axis, so pitch slot stays 0.
-function Metro:GetSeatAngle()
-    local right_dir = self:GetWorldRight()
-    local forward_dir = self:GetWorldForward()
-    if right_dir == nil or forward_dir == nil then
-        return nil
-    end
-    local angle = Vector4.ToRotation(right_dir)
-    local forward_angle = Vector4.ToRotation(forward_dir)
-    if self:IsPlayerSeatRightSide() then
-        angle.roll = self.seat_slope_sign * forward_angle.pitch
-    else
-        angle.yaw = angle.yaw + 180
-        angle.roll = -self.seat_slope_sign * forward_angle.pitch
-    end
-    return angle
-end
-
 -- NOTE: NPC anchor based correction was removed.
--- The metro entity transform itself is now the single source of truth.
+-- The metro entity transform is the source of truth.
 function Metro:GetAccurateLocalPosition(world_pos)
     return self:ChangeWorldPosToLocal(world_pos)
 end
@@ -295,7 +239,7 @@ function Metro:GetAccurateWorldPosition(local_pos)
     return self:ChangeLocalPosToWorld(local_pos)
 end
 
--- Compensates the systematic placement delay by extrapolating the position
+-- Extrapolate position to compensate placement delay.
 -- forward along the metro direction by speed * workspot_lead_time.
 function Metro:ExtrapolateWorldPosition(world_pos)
 
@@ -357,14 +301,7 @@ function Metro:GetSpeed()
     return self.current_speed
 end
 
--- True while the lag monitor recently detected the metro entity transform
--- stalling / lagging behind the actual train (typically right after departure).
-function Metro:IsTransformLagging()
-    return self.lag_recent_ticks > 0
-end
-
--- Monitor whether the metro entity transform lags behind the actual train
--- movement. Detector: entity position stalls for several ticks then jumps
+-- Monitor whether the metro transform lags behind the train.
 -- forward (typical right after departure).
 function Metro:SetTransformLagMonitor()
 
@@ -416,16 +353,11 @@ end
 function Metro:Unmount()
 
     local player = Game.GetPlayer()
-    -- The player may already be unmounted (e.g. a station/reset fired while the
-    -- stand-up sequence was running). Unmounting a non-mounted player would
-    -- index a nil entity and crash, so bail out cleanly instead. Do NOT
-    -- overwrite self.entity with nil here: downstream metro-domain checks
-    -- (walk reset) rely on the last valid entity handle.
+    -- The player may already be unmounted; bail out cleanly.
     local mounted = GetMountedVehicle(player)
     if mounted == nil then
         self.log_obj:Record(LogLevel.Warning, "Unmount: player not mounted, nothing to unmount")
-        self.is_mounted_player = false
-        return
+            return
     end
     self.entity = mounted
     self.entity_id = self.entity:GetEntityID()
@@ -451,7 +383,6 @@ function Metro:Unmount()
 
     Game.GetMountingFacility():Unmount(mount_event)
 
-    self.is_mounted_player = false
 
 end
 
@@ -480,8 +411,30 @@ function Metro:Mount()
 
     Game.GetMountingFacility():Mount(mounting_request)
 
-    self.is_mounted_player = true
 
+end
+
+-- Stand-hold spot: metro center line (x=0) at the seat row, facing forward.
+function Metro:GetStandHoldWorldPosition()
+    if self.player_seat_position == nil then
+        return nil
+    end
+    local local_pos = Vector4.new(0, self.player_seat_position.y, self.player_seat_position.z, 1)
+    return self:ExtrapolateWorldPosition(self:GetAccurateWorldPosition(local_pos))
+end
+
+function Metro:TeleportToStandHold()
+    local world_pos = self:GetStandHoldWorldPosition()
+    if world_pos == nil then
+        return false
+    end
+    local forward = self:GetWorldForward()
+    if forward == nil then
+        return false
+    end
+    local angle = Vector4.ToRotation(forward)
+    Game.GetTeleportationFacility():Teleport(Game.GetPlayer(), world_pos, angle)
+    return true
 end
 
 function Metro:TeleportToSafePosition()
