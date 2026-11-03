@@ -14,6 +14,8 @@ function Debug:New(core_obj)
     obj.is_im_gui_line_info = false
     obj.is_im_gui_measurement = false
     obj.is_im_gui_ristrict = false
+    obj.is_im_gui_spawn = false
+    obj.spawned_metro_id = nil
     return setmetatable(obj, self)
 end
 
@@ -32,7 +34,7 @@ function Debug:ImGuiMain()
     self:ImGuiRistrictedArea()
     self:ImGuiLineInfo()
     self:ImGuiMeasurement()
-    self:ImGuiExcuteFunction()
+    self:ImGuiSpawnMetro()
 
     ImGui.End()
 
@@ -98,6 +100,14 @@ function Debug:ImGuiCheckStatus()
         else
             ImGui.Text("In Workspot : False")
         end
+        local qs = Game.GetQuestsSystem()
+        ImGui.Text(string.format("pose_change=%d stand_door=%d",
+            qs:GetFactStr("ue_metro_signal_pose_change"), qs:GetFactStr("ue_metro_player_stand_door")))
+        local ok, info = pcall(function() return Game.GetWorkspotSystem():GetExtendedInfo(Game.GetPlayer()) end)
+        if ok and info ~= nil then
+            ImGui.Text(string.format("ws: active=%s entering=%s exiting=%s",
+                tostring(info.isActive), tostring(info.entering), tostring(info.exiting)))
+        end
     end
 end
 
@@ -109,7 +119,7 @@ function Debug:ImGuiPlayerLocalPosition()
             return
         end
         local player_pos = player:GetWorldPosition()
-        if self.core_obj.metro_obj.entity == nil or  self.core_obj.metro_obj.measurement_npc_position == nil then
+        if self.core_obj.metro_obj.entity == nil then
             return
         end
         local player_local_pos = self.core_obj.metro_obj:ChangeWorldPosToLocal(player_pos)
@@ -124,11 +134,6 @@ function Debug:ImGuiPlayerLocalPosition()
         local absolute_position_y = string.format("%.2f", player_local_pos.y)
         local absolute_position_z = string.format("%.2f", player_local_pos.z)
         ImGui.Text("Player Local Pos : " .. absolute_position_x .. ", " .. absolute_position_y .. ", " .. absolute_position_z)
-        local npc_pos = self.core_obj.metro_obj.measurement_npc_position
-        local npc_position_x = string.format("%.2f", npc_pos.x)
-        local npc_position_y = string.format("%.2f", npc_pos.y)
-        local npc_position_z = string.format("%.2f", npc_pos.z)
-        ImGui.Text("NPC Measurement Pos : " .. npc_position_x .. ", " .. npc_position_y .. ", " .. npc_position_z)
         local pos = self.core_obj.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
         if pos == nil then
             return
@@ -256,58 +261,35 @@ function Debug:ImGuiMeasurement()
     end
 end
 
-function Debug:ImGuiExcuteFunction()
-    if ImGui.Button("TF1") then
-        local sys = Game.GetPlayer():GetFastTravelSystem()
-        local arr = sys:GetFastTravelPoints()
-        print(#arr)
-        for _, point in ipairs(arr) do
-            local pointID = tostring(point.pointRecord.value)
-            if string.find(pointID, 'wat_lch_metro_ftp_02', 1, true) then
-                pointData = point
-                break
+-- TEMP: spawn the metro train ent via codeware dynamic entity system
+function Debug:ImGuiSpawnMetro()
+    self.is_im_gui_spawn = ImGui.Checkbox("[ImGui] Spawn Metro (temp)", self.is_im_gui_spawn)
+    if self.is_im_gui_spawn then
+        if ImGui.Button("Spawn ue_metro_train") then
+            local player = Game.GetPlayer()
+            local pos = player:GetWorldPosition()
+            local forward = player:GetWorldForward()
+            local spawn_pos = Vector4.new(pos.x + forward.x * 10, pos.y + forward.y * 10, pos.z + 1, 1)
+            local angle = Quaternion.new(player:GetWorldOrientation())
+            local spec = DynamicEntitySpec.new()
+            spec.recordID = "Vehicle.ue_metro_train"
+            spec.position = spawn_pos
+            spec.orientation = angle
+            spec.alwaysSpawned = true
+            spec.persistSpawn = false
+            spec.persistState = false
+            local id = Game.GetDynamicEntitySystem():CreateEntity(spec)
+            self.spawned_metro_id = id
+            print("[InsideMetro][Debug] spawned metro id=" .. tostring(id and id.hash))
+        end
+        if self.spawned_metro_id ~= nil then
+            if ImGui.Button("Despawn metro") then
+                Game.GetDynamicEntitySystem():DeleteEntity(self.spawned_metro_id)
+                print("[InsideMetro][Debug] despawned metro id=" .. tostring(self.spawned_metro_id.hash))
+                self.spawned_metro_id = nil
             end
         end
-        sys:PerformFastTravel(Game.GetPlayer(), pointData)
-        sys:SetFastTravelStarted()
-        print("Excute Test Function 1")
     end
-    ImGui.SameLine()
-    if ImGui.Button("TF2") then
-        local player = Game.GetPlayer()
-        local player_pos = player:GetWorldPosition()
-        local forward = player:GetWorldForward()
-        local new_pos = Vector4.new(player_pos.x + 3 * forward.x, player_pos.y + 3 * forward.y, player_pos.z + 3 * forward.z, player_pos.w)
-        local angle = player:GetWorldOrientation():ToEulerAngles()
-        Game.GetTeleportationFacility():Teleport(player, new_pos, angle)
-        print("Excute Test Function 2")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF3") then
-        local event = gameuiDeleteInputHintBySourceEvent.new()
-        event.source = CName.new("UI_DPad")
-        event.targetHintContainer = CName.new("GameplayInputHelper")
-        Game.GetUISystem():QueueEvent(event)
-        print("Excute Test Function 3")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF4") then
-        local system = Game.GetQuestsSystem()
-        system:SetFact(CName.new("ue_metro_next_station"), 1) 
-        print("Excute Test Function 4")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF5") then
-        print(Game.GetQuestsSystem():SetFact(CName.new("ue_metro_free_roam_get_up"), 1))
-        print("Excute Test Function 5")
-    end
-    ImGui.SameLine()
-    if ImGui.Button("TF6") then
-        local current_pos = Game.GetPlayer():GetWorldPosition()
-        print(current_pos.x .. ", " .. current_pos.y .. ", " .. current_pos.z)
-        print("Excute Test Function 6")
-    end
-
 end
 
 return Debug

@@ -8,17 +8,11 @@ function HUD:New(metro_obj)
     obj.log_obj:SetLevel(LogLevel.Info, "HUD")
     obj.metro_obj = metro_obj
     -- static --
-    obj.max_start_choice_num = 1
-    obj.max_stand_choice_num = 2
+    obj.max_stand_choice_num = 1
     obj.max_sit_choice_num = 1
-    obj.enable_start_choice_contents = {{caption = "ChoiceCaptionParts.GetUpIcon", lockey = "LocKey#37918"}}
-    obj.enable_stand_choice_contents = {{caption = "ChoiceCaptionParts.GetUpIcon", lockey = "LocKey#37918"}, {caption = "ChoiceCaptionParts.MetroIcon", lockey = "LocKey#36196"}}
+    obj.enable_stand_choice_contents = {{caption = "ChoiceCaptionParts.GetUpIcon", lockey = "LocKey#549"}}
     obj.enable_sit_choice_contents = {{caption = "ChoiceCaptionParts.SitIcon", lockey = "LocKey#522"}}
     -- dynamic --
-    obj.show_stand_hint_event = nil
-    obj.hide_stand_hint_event = nil
-    obj.show_sit_hint_event = nil
-    obj.hide_sit_hint_event = nil
     obj.interaction_hub = nil
     obj.selected_choice_index = Def.ChoiceText.Stand
     return setmetatable(obj, self)
@@ -26,22 +20,6 @@ end
 
 function HUD:Initialize()
     self:SetChoice()
-end
-
-function HUD:ShowStandHint()
-    Game.GetUISystem():QueueEvent(self.show_stand_hint_event)
-end
-
-function HUD:HideStandHint()
-    Game.GetUISystem():QueueEvent(self.hide_stand_hint_event)
-end
-
-function HUD:ShowSitHint()
-    Game.GetUISystem():QueueEvent(self.show_sit_hint_event)
-end
-
-function HUD:HideSitHint()
-    Game.GetUISystem():QueueEvent(self.hide_sit_hint_event)
 end
 
 function HUD:SetChoice(variation)
@@ -101,7 +79,6 @@ function HUD:ShowChoice(variation)
 
     interaction_blackboard:SetInt(ui_interaction_define.ActiveChoiceHubID, self.interaction_hub.id)
     local data = interaction_blackboard:GetVariant(ui_interaction_define.DialogChoiceHubs)
-    self.dialogIsScrollable = true
     local result, err = pcall(function()
         self.interaction_ui_base:OnDialogsSelectIndex(self.selected_choice_index)
         self.interaction_ui_base:OnDialogsData(data)
@@ -132,11 +109,6 @@ function HUD:HideChoice()
         self.log_obj:Record(LogLevel.Trace, "Failed to hide choice: " .. tostring(err))
     end
 
-end
-
-function HUD:ShowDangerWarning()
-    local text = GetLocalizedText("LocKey#49558")
-    GameHUD.ShowWarning(text, 0.5)
 end
 
 return HUD

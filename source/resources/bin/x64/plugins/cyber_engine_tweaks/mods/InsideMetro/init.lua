@@ -16,7 +16,7 @@ local Debug = require('Debug/debug.lua')
 
 InsideMetro = {
 	description = "Inside The Metro",
-	version = "1.4.0",
+	version = "2.0.0",
     is_debug_mode = false,
     -- version check
     cet_required_version = 36.0, -- 1.36.0
@@ -48,6 +48,7 @@ registerForEvent("onDraw", function()
 end)
 
 registerForEvent('onUpdate', function(delta)
+    InsideMetro.last_delta = delta
     Cron.Update(delta)
 end)
 

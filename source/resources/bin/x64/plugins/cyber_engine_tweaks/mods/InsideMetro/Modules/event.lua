@@ -3,40 +3,25 @@ local HUD = require("Modules/hud.lua")
 local Event = {}
 Event.__index = Event
 
-function Event:New(player_obj, metro_obj)
+function Event:New(metro_obj)
     -- instance --
     local obj = {}
     obj.log_obj = Log:New()
     obj.log_obj:SetLevel(LogLevel.Info, "Event")
     obj.hud_obj = HUD:New(metro_obj)
-    obj.player_obj = player_obj
     obj.metro_obj = metro_obj
     -- static --
-    obj.first_standing_time = 5
     -- dynamic --
     obj.current_status = Def.State.OutsideMetro
     obj.prev_player_local_pos = metro_obj.default_position
     obj.is_on_ground = false
     obj.is_initial = false
-    obj.is_ready = false
-    obj.is_invisible_collision = false
-    obj.is_first_standing = false
-    obj.standing_y_offset = 0
     obj.is_in_menu = false
     obj.is_in_popup = false
     obj.is_in_photo = false
-    obj.next_station_num = 1
-    obj.next_stock_station_num = 0
-    -- Inertia-related fields
-    obj.velocity_history = {}
-    obj.current_velocity = Vector4.new(0, 0, 0, 0)
-    obj.last_ground_position = metro_obj.default_position
-    obj.airborne_time = 0
-    obj.max_velocity_history = Def.Inertia.max_velocity_history
-    obj.metro_velocity_influence = Def.Inertia.metro_velocity_influence
-    -- Vehicle velocity tracking
-    obj.vehicle_position_history = {}
-    obj.last_vehicle_position = nil
+    obj.walk_outside_time = 0
+    obj.prev_in_workspot = nil
+    obj.is_stand_choice_dismissed = false
     return setmetatable(obj, self)
 end
 
@@ -52,23 +37,12 @@ function Event:Uninitialize()
     self.prev_player_local_pos = self.metro_obj.default_position
     self.is_on_ground = false
     self.is_initial = false
-    self.is_ready = false
-    self.is_invisible_collision = false
-    self.is_first_standing = false
-    self.standing_y_offset = 0
-    -- Clear velocity history
-    self.velocity_history = {}
-    self.current_velocity = Vector4.new(0, 0, 0, 0)
-    self.last_vehicle_position = nil
-    self.airborne_time = 0
-    self.player_obj:DeleteWorkspot()
     self.current_status = Def.State.OutsideMetro
     self.is_in_menu = false
     self.is_in_popup = false
     self.is_in_photo = false
-    self.next_station_num = 1
-    self.next_stock_station_num = 0
-
+    self.prev_in_workspot = nil
+    self.is_stand_choice_dismissed = false
 end
 
 function Event:SetGameUIObserver()
@@ -119,7 +93,7 @@ end
 
 function Event:SetInteractionUIObserver()
 
-    -- Overside choice ui (refer to https://www.nexusmods.com/cyberpunk2077/mods/7299)
+    -- Override choice UI (ref: nexusmods.com/cyberpunk2077/mods/7299)
     Observe("InteractionUIBase", "OnInitialize", function(this)
         self.hud_obj.interaction_ui_base = this
     end)
@@ -199,7 +173,6 @@ function Event:SetStatus(status)
         return true
     elseif self.current_status == Def.State.WalkInsideMetro and status == Def.State.SitInsideMetro then
         self.log_obj:Record(LogLevel.Info, "Change Status from WalkInsideMetro to SitInsideMetro")
-        self:CheckSkipStation()
         self.current_status = Def.State.SitInsideMetro
         self.hud_obj:HideChoice()
         return true
@@ -255,7 +228,25 @@ function Event:CheckAllEvents()
 
     if self.current_status == Def.State.OutsideMetro then
         self:CheckInsideMetro()
-    elseif self.current_status == Def.State.SitInsideMetro then
+        return
+    end
+
+    -- seated + unmounted: reset status for re-boarding
+    if (self.current_status == Def.State.SitInsideMetro
+            or self.current_status == Def.State.EnableStand)
+            and not self.metro_obj:IsMountedPlayer()
+            and not InsideMetro.core_obj.is_switching_pose then
+        self.log_obj:Record(LogLevel.Info, "Detect Outside Metro (general reset)")
+        local changed = self:SetStatus(Def.State.OutsideMetro)
+        if not changed then
+            self.current_status = Def.State.OutsideMetro
+            self:Uninitialize()
+        end
+        self.metro_obj:Uninitialize()
+        return
+    end
+
+    if self.current_status == Def.State.SitInsideMetro then
         self:CheckEnableStand()
         self:CheckOutsideMetro()
         self:CheckNextStation()
@@ -272,8 +263,22 @@ function Event:CheckAllEvents()
         self:CheckInvalidPosition()
         self:CheckRestrictedArea()
         self:CheckNextStation()
-    elseif self.current_status == Def.State.Invalid then
-        self:CheckGetOff()
+        -- walking players reset only when actually outside the metro domain
+        if not InsideMetro.core_obj.is_switching_pose then
+            local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
+            if player_local_pos == nil or not self.metro_obj:IsInMetro(player_local_pos) then
+                -- grace period: absorb failsafe teleport-back
+                self.walk_outside_time = self.walk_outside_time + InsideMetro.core_obj.event_check_interval
+                if self.walk_outside_time >= InsideMetro.core_obj.config_obj.walk_reset_grace then
+                    self.log_obj:Record(LogLevel.Info, "Detect Outside Metro (walk reset)")
+                    self.walk_outside_time = 0
+                    self:SetStatus(Def.State.OutsideMetro)
+                    self.metro_obj:Uninitialize()
+                end
+            else
+                self.walk_outside_time = 0
+            end
+        end
     end
 
 end
@@ -288,21 +293,6 @@ end
 
 function Event:IsInMetro()
     return self.current_status ~= Def.State.OutsideMetro
-end
-
-function Event:IsOnGround()
-    return self.is_on_ground
-end
-
-function Event:CheckGetOff()
-    if not self.metro_obj:IsMountedPlayer() then
-        self.log_obj:Record(LogLevel.Info, "Detect Get Off Metro")
-        self.current_status = Def.State.OutsideMetro
-        self.hud_obj:HideChoice()
-        self:Uninitialize()
-        self.metro_obj:Uninitialize()
-        return
-    end
 end
 
 function Event:CheckInsideMetro()
@@ -333,57 +323,23 @@ function Event:CheckOutsideMetro()
 end
 
 function Event:CheckEnableStand()
-    if not self.is_ready then
-        if self.metro_obj:GetSpeed() >= 1 then
-            self.is_ready = true
-            local active_station = self.metro_obj:GetActiveStation()
-            for _, track_info in ipairs(self.metro_obj:GetTrackList(active_station)) do
-                if track_info.track == self.metro_obj.selected_track_index then
-                    if not track_info.is_invalid then
-                        self.is_first_standing = true
-                        self:SetStatus(Def.State.EnableStand)
-                        Cron.After(self.first_standing_time, function()
-                            self.is_first_standing = false
-                        end)
-                    end
-                end
-            end
-        end
-    end
-
-    if self.is_first_standing then
-        self.standing_y_offset = 1.5 * self.metro_obj:GetSpeed() / 43
+    if InsideMetro.core_obj.is_switching_pose then
         return
-    else
-        self.standing_y_offset = 0
     end
-
-    local is_invalid = false
-    local is_final = false
-
-    for _, track_info in ipairs(self.metro_obj:GetTrackList(self.metro_obj.next_station_num)) do
-        if track_info.track == self.metro_obj.selected_track_index then
-            is_invalid = track_info.is_invalid
-            is_final = track_info.is_final
-            break
-        end
+    local in_workspot = Game.GetWorkspotSystem():IsActorInWorkspot(Game.GetPlayer())
+    local stand_fact = Game.GetQuestsSystem():GetFactStr("ue_metro_player_stand_door")
+    -- fact reset releases the dismissal latch
+    if stand_fact == 0 then
+        self.is_stand_choice_dismissed = false
     end
-
-    if self.metro_obj:GetSpeed() < 1 then
-        if is_invalid then
-            self.log_obj:Record(LogLevel.Debug, "Detect Invalid Station")
-            self:SetStatus(Def.State.SitInsideMetro)
-        elseif is_final then
-            self.log_obj:Record(LogLevel.Debug, "Detect Final Station")
-            self:SetStatus(Def.State.SitInsideMetro)
-        else
-            self.log_obj:Record(LogLevel.Debug, "Detect Enable Stand")
-            if self.is_ready then
-                self:SetStatus(Def.State.EnableStand)
-            end
-        end
+    local can_stand = in_workspot and stand_fact == 1 and not self.metro_obj:IsCurrentInvalidStation()
+    if self.current_status == Def.State.EnableStand and not can_stand then
+        -- choice just disappeared: latch until the fact resets (fact update lags workspot)
+        self.is_stand_choice_dismissed = true
+    end
+    if can_stand and not self.is_stand_choice_dismissed then
+        self:SetStatus(Def.State.EnableStand)
     else
-        self.log_obj:Record(LogLevel.Debug, "Detect Disable Stand")
         self:SetStatus(Def.State.SitInsideMetro)
     end
 end
@@ -406,21 +362,12 @@ function Event:CheckNextStation()
     end
 end
 
-function Event:CheckSkipStation()
-    local quest_system = Game.GetQuestsSystem()
-    local active_station_num = quest_system:GetFact("ue_metro_active_station")
-    local next_station_num = quest_system:GetFact("ue_metro_next_station")
-
-    if active_station_num == next_station_num then
-        self.log_obj:Record(LogLevel.Info, "Detect Skip Station. set next station to " .. next_station_num)
-        self.next_stock_station_num = next_station_num
-    else
-        self.next_stock_station_num = 0
-    end
-end
-
 function Event:CheckEnableSit()
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
+    if player_local_pos == nil then
+        self:SetStatus(Def.State.WalkInsideMetro)
+        return
+    end
     if self:IsAtStation() then
         self.log_obj:Record(LogLevel.Debug, "Metro is at station. Sit command is blocked")
         self:SetStatus(Def.State.WalkInsideMetro)
@@ -444,6 +391,9 @@ end
 
 function Event:CheckInvalidPosition()
     local player_local_pos = self.metro_obj:GetAccurateLocalPosition(Game.GetPlayer():GetWorldPosition())
+    if player_local_pos == nil then
+        return
+    end
     if not self.metro_obj:IsInMetro(player_local_pos) then
         self.log_obj:Record(LogLevel.Warning, "Player is not in Metro")
         self.metro_obj:TeleportToSafePosition()

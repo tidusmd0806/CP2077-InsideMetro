@@ -1,6 +1,6 @@
 local Event = require('Modules/event.lua')
 local Metro = require('Modules/metro.lua')
-local Player = require('Modules/player.lua')
+local Config = require('Etc/config.lua')
 
 local Core = {}
 Core.__index = Core
@@ -10,28 +10,20 @@ function Core:New()
     local obj = {}
     obj.log_obj = Log:New()
     obj.log_obj:SetLevel(LogLevel.Info, "Core")
-    obj.player_obj = Player:New()
     obj.metro_obj = Metro:New()
-    obj.event_obj = Event:New(obj.player_obj, obj.metro_obj)
+    obj.event_obj = Event:New(obj.metro_obj)
+    obj.config_obj = Config:New()
     -- static --
     obj.event_check_interval = 0.01
-    obj.wait_time_after_standup = 3.5
-    obj.stand_up_anim = "sit_chair_lean0__2h_elbow_on_knees__01__to__stand__2h_on_sides__01__turn0__q005_01__01"
-    obj.sit_down_anim = "sit_chair_lean180__2h_on_lap__01"
     -- dynamic --
-    obj.move_forward = false
-    obj.move_backward = false
-    obj.move_right = false
-    obj.move_left = false
-    obj.move_yaw = 0
     obj.is_locked_apply_action = false
+    obj.is_switching_pose = false
     return setmetatable(obj, self)
 end
 
 function Core:Initialize()
     self.event_obj:Initialize()
     self:SetObserverAction()
-
     Cron.Every(self.event_check_interval, {tick = 1}, function(timer)
         self.event_obj:CheckAllEvents()
     end)
@@ -40,70 +32,20 @@ end
 function Core:SetObserverAction()
     Observe("PlayerPuppet", "OnAction", function(this, action, consumer)
         local action_name = action:GetName(action).value
-		local action_type = action:GetType(action).value
-        local action_value = action:GetValue(action)
+        local action_type = action:GetType(action).value
 
         if self.event_obj:IsInPouse() then
             return
         end
         local status = self.event_obj:GetStatus()
         if status == Def.State.EnableStand and not self.metro_obj:IsCurrentInvalidStation() then
-            if (action_name == "UETChangePose" and action_type == "BUTTON_PRESSED") or (action_name == "UETWindow" and action_type == "BUTTON_PRESSED") then
-                consumer:Consume()
-                return
-            end
-            if action_name == "UETExit" and action_type == "BUTTON_PRESSED" then
-                if self.event_obj.hud_obj.selected_choice_index ~= Def.ChoiceText.Exit or self.is_locked_apply_action then
-                    consumer:Consume()
-                end
-                if self.event_obj.next_stock_station_num ~= 0 then
-                    Game.GetQuestsSystem():SetFact("ue_metro_next_station", self.event_obj.next_stock_station_num)
-                    self.event_obj.next_stock_station_num = 0
-                end
-                self.is_locked_apply_action = true
-                Cron.After(5.5, function()
-                    self.is_locked_apply_action = false
-                end)
-            end
             if action_name == "ChoiceApply" and action_type == "BUTTON_PRESSED" then
-                if self.event_obj.hud_obj.selected_choice_index == Def.ChoiceText.Stand then
-                    if self.is_locked_apply_action then
-                        return
-                    end
-                    self.is_locked_apply_action = true
-                    self:EnableWalkingMetro()
-                    Cron.After(5.5, function()
-                        self.is_locked_apply_action = false
-                    end)
-                end
-            elseif action_name == "ChoiceScrollUp" and action_type == "BUTTON_PRESSED" then
                 if self.is_locked_apply_action then
                     return
                 end
                 self.is_locked_apply_action = true
-                self.event_obj.hud_obj:HideChoice()
-                if self.event_obj.hud_obj.selected_choice_index >= self.event_obj.hud_obj.max_stand_choice_num then
-                    self.event_obj.hud_obj.selected_choice_index = 0
-                else
-                    self.event_obj.hud_obj.selected_choice_index = self.event_obj.hud_obj.selected_choice_index + 1
-                end
-                self.event_obj.hud_obj:ShowChoice(Def.ChoiceVariation.Stand)
-                Cron.After(0.5, function()
-                    self.is_locked_apply_action = false
-                end)
-            elseif action_name == "ChoiceScrollDown" and action_type == "BUTTON_PRESSED" then
-                if self.is_locked_apply_action then
-                    return
-                end
-                self.is_locked_apply_action = true
-                self.event_obj.hud_obj:HideChoice()
-                if self.event_obj.hud_obj.selected_choice_index <= 0 then
-                    self.event_obj.hud_obj.selected_choice_index = self.event_obj.hud_obj.max_stand_choice_num - 1
-                else
-                    self.event_obj.hud_obj.selected_choice_index = self.event_obj.hud_obj.selected_choice_index - 1
-                end
-                self.event_obj.hud_obj:ShowChoice(Def.ChoiceVariation.Stand)
-                Cron.After(0.5, function()
+                self:EnableWalkingMetro()
+                Cron.After(5.5, function()
                     self.is_locked_apply_action = false
                 end)
             end
@@ -113,13 +55,6 @@ function Core:SetObserverAction()
             end
             if action_name == "ChoiceApply" and action_type == "BUTTON_PRESSED" then
                 self:DisableWalkingMetro()
-            end
-        elseif status == Def.State.SitInsideMetro and not self.metro_obj:IsCurrentInvalidStation() then
-            if action_name == "UETExit" and action_type == "BUTTON_PRESSED" then
-                if self.event_obj.next_stock_station_num ~= 0 then
-                    Game.GetQuestsSystem():SetFact("ue_metro_next_station", self.event_obj.next_stock_station_num)
-                    self.event_obj.next_stock_station_num = 0
-                end
             end
         end
     end)
@@ -137,39 +72,75 @@ function Core:SetFreezeMode(is_freeze)
     end
 end
 
+-- Restore default camera params, same event a jump sends
+function Core:ResetCamera()
+    if self.config_obj.standup_camera_reset ~= 1 then
+        return
+    end
+    pcall(function()
+        local evt = NewObject('gameSetCameraParamsEvent')
+        evt.paramsName = CName.new("Default")
+        Game.GetPlayer():QueueEvent(evt)
+    end)
+end
+
+-- stand up via StopInDevice + Unmount
 function Core:EnableWalkingMetro()
     if self.is_switching_pose then
         return
     end
     self.is_switching_pose = true
 
-    self.event_obj.next_stock_station_num = 0
-
     self.log_obj:Record(LogLevel.Info, "EnableWalkingMetro")
-    local right_dir = self.metro_obj:GetWorldRight()
-    local local_workspot_pos = self.metro_obj:GetPlayerSeatPosition()
-    local workspot_angle = Vector4.ToRotation(right_dir)
-    if self.metro_obj:IsPlayerSeatRightSide() then
-        workspot_angle.yaw = workspot_angle.yaw
-    else
-        workspot_angle.yaw = workspot_angle.yaw + 180
-    end
-    local_workspot_pos.y = local_workspot_pos.y + self.event_obj.standing_y_offset
-    local world_pos = self.metro_obj:GetAccurateWorldPosition(local_workspot_pos)
-    self.player_obj:PlayPose(self.stand_up_anim, world_pos, workspot_angle)
-    self:KeepWorkspotSeatPostion(local_workspot_pos, workspot_angle)
-    Cron.After(self.wait_time_after_standup, function()
-        self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
+
+    local freeze = self.config_obj.standup_freeze == 1
+    local eyes = self.config_obj.standup_eyes == 1
+    if freeze then
+        if eyes then
+            GameObjectEffectHelper.StartEffectEvent(Game.GetPlayer(), "eyes_closed_loop", true, worldEffectBlackboard.new())
+        end
         self:SetFreezeMode(true)
+    end
+    if self.config_obj.standup_stop_in_device == 1 then
+        Game.GetWorkspotSystem():StopInDevice(Game.GetPlayer())
+    end
+    local hold = self.config_obj.standup_hold_pos == 1
+    local function do_unmount()
+        self.log_obj:Record(LogLevel.Trace, "EnableWalkingMetro: Unmount")
         self.metro_obj:Unmount()
         self.event_obj:SetStatus(Def.State.WalkInsideMetro)
         self.is_switching_pose = false
-        Cron.After(0.5, function()
-            self:SetFreezeMode(false)
-        end)
-    end)
+        if hold then
+            self.metro_obj:TeleportToStandHold()
+            if not freeze then
+                Cron.After(0.3, function()
+                    self.metro_obj:TeleportToStandHold()
+                    self:ResetCamera()
+                end)
+            end
+        end
+        if freeze then
+            Cron.After(0.5, function()
+                if hold then
+                    self.metro_obj:TeleportToStandHold()
+                end
+                self:SetFreezeMode(false)
+                self:ResetCamera()
+                if eyes then
+                    GameObjectEffectHelper.StopEffectEvent(Game.GetPlayer(), "eyes_closed_loop")
+                    GameObjectEffectHelper.StartEffectEvent(Game.GetPlayer(), "eyes_opening_05s", true, worldEffectBlackboard.new())
+                end
+            end)
+        end
+    end
+    if self.config_obj.standup_stop_in_device == 1 and self.config_obj.standup_stop_gap > 0 then
+        Cron.After(self.config_obj.standup_stop_gap, do_unmount)
+    else
+        do_unmount()
+    end
 end
 
+-- sit down via pose-change fact
 function Core:DisableWalkingMetro()
     if self.is_switching_pose then
         return
@@ -177,58 +148,46 @@ function Core:DisableWalkingMetro()
     self.is_switching_pose = true
 
     self.log_obj:Record(LogLevel.Info, "DisableWalkingMetro")
-    self:SetFreezeMode(true)
+    -- suppress the stand choice until the scene resets the stand fact
+    self.event_obj.is_stand_choice_dismissed = true
+
+    local freeze = self.config_obj.sit_fact_freeze == 1
+    if freeze then
+        self:SetFreezeMode(true)
+    end
+    local fact_done = false
+    local function finish()
+        if fact_done then
+            return
+        end
+        fact_done = true
+        self.event_obj:SetStatus(Def.State.SitInsideMetro)
+        Cron.After(self.config_obj.sit_fact_delay, function()
+            Game.GetQuestsSystem():SetFactStr(self.config_obj.sit_fact_name, 1)
+            self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: fact set")
+            self.is_switching_pose = false
+            if freeze then
+                Cron.After(1.0, function()
+                    self:SetFreezeMode(false)
+                end)
+            end
+        end)
+    end
     Cron.After(0.01, function()
         self.metro_obj:Mount()
         Cron.Every(0.01, {tick = 1}, function(timer)
             if Game.GetPlayer():GetMountedVehicle() == nil then
-                self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: Player is in vehicle")
                 return
             end
-
-            self.event_obj:SetStatus(Def.State.SitInsideMetro)
-
-            local right_dir = self.metro_obj:GetWorldRight()
-            local workspot_pos = self.metro_obj:GetAccurateWorldPosition(self.metro_obj:GetPlayerSeatPosition())
-            local workspot_angle = Vector4.ToRotation(right_dir)
-            if self.metro_obj:IsPlayerSeatRightSide() then
-                workspot_angle.yaw = workspot_angle.yaw
-            else
-                workspot_angle.yaw = workspot_angle.yaw + 180
-            end
-            self.log_obj:Record(LogLevel.Trace, "DisableWalkingMetro: PlayPose")
-            self.player_obj:PlayPose(self.sit_down_anim, workspot_pos, workspot_angle)
-            Cron.After(0.5, function()
-                self:SetFreezeMode(false)
-                self.is_switching_pose = false
-            end)
-
             Cron.Halt(timer)
+            finish()
         end)
     end)
-end
-
-function Core:KeepWorkspotSeatPostion(local_pos, angle)
-    Cron.Every(0.01, {tick = 1}, function(timer)
-        local workspot_entity = self.player_obj:GetWorkspotEntity()
-        if workspot_entity == nil then
-            self.log_obj:Record(LogLevel.Trace, "KeepWorkspotSeatPostion: workspot_entity is nil")
-            return
-        end
-        timer.tick = timer.tick + 1
-        local world_pos = self.metro_obj:GetAccurateWorldPosition(local_pos)
-        if world_pos == nil or angle == nil then
-            self.log_obj:Record(LogLevel.Error, "KeepWorkspotSeatPostion: pos or angle is nil")
-            Cron.Halt(timer)
-            return
-        end
-
-        Game.GetTeleportationFacility():Teleport(workspot_entity, world_pos, angle)
-        if not self.metro_obj:IsMountedPlayer() then
-            self.log_obj:Record(LogLevel.Trace, "DeleteWorkspot")
-            self.player_obj:DeleteWorkspot()
-            Cron.Halt(timer)
-            return
+    -- safety: never leave the player frozen if mount detection fails
+    Cron.After(5.0, function()
+        if not fact_done then
+            self.log_obj:Record(LogLevel.Warning, "DisableWalkingMetro: mount timeout")
+            finish()
         end
     end)
 end
